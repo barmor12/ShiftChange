@@ -5,16 +5,12 @@
       "password": "baradmin",
       "role": "admin"
     },
-    "user": {
-      "password": "user123",
-      "role": "user"
-    },
-    "test": {
-      "password": "test",
-      "role": "user"
-    },
     "a": {
       "password": "a",
+      "role": "admin"
+    },
+    "test": {
+      "password": "test12",
       "role": "admin"
     }
   }

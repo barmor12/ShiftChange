@@ -20,6 +20,24 @@ th{background:#f8fafc; color:#64748b;}
 .err{color:#b91c1c; margin:8px 0 0;}
 .badge{display:inline-flex; gap:6px; align-items:center; font-size:12px; padding:6px 10px; border:1px solid #e5e7eb; border-radius:999px; background:#fff; color:#64748b;}
 .badge strong{color:#0f172a;}
+.modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.4);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:50;
+}
+.modal.hidden{display:none;}
+.modal-box{
+  background:#fff;
+  padding:20px;
+  border-radius:14px;
+  width:360px;
+  display:grid;
+  gap:10px;
+}
 </style>
 </head>
 <body>
@@ -40,14 +58,20 @@ th{background:#f8fafc; color:#64748b;}
   <div class="card">
     <h2 style="margin:0 0 12px;">יצירת משתמש חדש</h2>
 
-    <form method="POST" class="row">
+    <form method="POST" action="/users/create" class="row">
       <div>
         <label>שם משתמש</label>
         <input name="username" placeholder="לדוגמה: mor" required>
       </div>
       <div>
         <label>סיסמה</label>
-        <input name="password" placeholder="********" required>
+        <input
+          name="password"
+          type="password"
+          minlength="6"
+          placeholder="לפחות 6 תווים"
+          required
+        >
       </div>
       <div>
         <label>תפקיד</label>
@@ -81,8 +105,11 @@ th{background:#f8fafc; color:#64748b;}
         {% for uname, udata in users.items() %}
         <tr>
           <td><strong>{{ uname }}</strong></td>
-          <td>{{ udata.role if udata.role else "user" }}</td>
-          <td>הסיסמה נשמרת ב־config.json (כמו שהגדרת)</td>
+          <td>{{ udata.role }}</td>
+          <td>
+            <button onclick="openEdit('{{ uname }}','{{ udata.role }}')">✏️</button>
+            <button onclick="deleteUser('{{ uname }}')" style="background:#dc2626">❌</button>
+          </td>
         </tr>
         {% endfor %}
       </tbody>
@@ -90,5 +117,82 @@ th{background:#f8fafc; color:#64748b;}
   </div>
 </main>
 
+<div id="editModal" class="modal hidden">
+  <div class="modal-box">
+    <h3>עריכת משתמש</h3>
+
+    <label>שם משתמש</label>
+    <input id="editUser" disabled>
+
+    <label>סיסמה חדשה</label>
+    <input id="editPass" placeholder="השאר ריק אם לא לשנות">
+
+    <label>תפקיד</label>
+    <select id="editRole">
+      <option value="user">user</option>
+      <option value="admin">admin</option>
+    </select>
+
+    <div style="display:flex; gap:8px; justify-content:flex-end;">
+      <button onclick="closeEdit()" style="background:#6b7280">ביטול</button>
+      <button onclick="saveEdit()">💾 שמור</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
+
+<script>
+let currentUser = null;
+
+function openEdit(user, role){
+  currentUser = user;
+  document.getElementById("editUser").value = user;
+  document.getElementById("editRole").value = role;
+  document.getElementById("editModal").style.display = "block";
+}
+
+async function saveEdit(){
+  const password = document.getElementById("editPass").value;
+  const role = document.getElementById("editRole").value;
+
+  const res = await fetch("/users/update",{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({ username:currentUser, password, role })
+  });
+
+  const data = await res.json();
+  if(!res.ok) alert(data.error);
+  else window.location.href = "/users";
+}
+async function deleteUser(username){
+  if(username === "{{ user }}"){
+    alert("לא ניתן למחוק את המשתמש שמחובר כעת");
+    return;
+  }
+
+  const warning = confirm(
+    "⚠️ מחיקת משתמש היא פעולה בלתי הפיכה.\n\nהאם אתה בטוח?"
+  );
+  if(!warning) return;
+
+const password = prompt(
+  "לאישור המחיקה – הזן את הסיסמה של המשתמש:\n" + username
+);
+  if(!password) return;
+
+  const res = await fetch("/users/delete",{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ username, password })
+  });
+
+  const data = await res.json();
+  if(!res.ok){
+    alert(data.error);
+  } else {
+    window.location.href = "/users";
+  }
+}
+</script>

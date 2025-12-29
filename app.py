@@ -266,10 +266,7 @@ def load_teams_with_rows():
 
         name = ws.cell(row, NAME_COL).value
         emp_id = ws.cell(row, ID_COL).value
-        print(
-        f"ROW {row} | name={repr(name)} | emp_id={repr(emp_id)}"
-)
-
+      
         if not name:
             empty += 1
             row += 1
@@ -393,55 +390,148 @@ def audit():
         state=load_state()
     )
 
-@app.route("/users", methods=["GET", "POST"])
+@app.route("/users", methods=["GET"])
 @login_required
 def users():
     admin_required()
-    global CONFIG
-    CONFIG = load_config()
-
-    if request.method == "POST":
-        data = request.form or {}
-        username = (data.get("username") or "").strip()
-        password = (data.get("password") or "").strip()
-        role = (data.get("role") or "user").strip()
-
-        if not username or not password:
-            return render_template(
-                "users.html",
-                users=CONFIG.get("users", {}),
-                error="חובה להזין שם משתמש וסיסמה",
-                user=session["user"],
-                role=session.get("role"),
-                state=load_state()
-            )
-
-        CONFIG.setdefault("users", {})
-        if username in CONFIG["users"]:
-            return render_template(
-                "users.html",
-                users=CONFIG.get("users", {}),
-                error="שם משתמש כבר קיים",
-                user=session["user"],
-                role=session.get("role"),
-                state=load_state()
-            )
-
-        CONFIG["users"][username] = {"password": password, "role": role}
-        save_config(CONFIG)
-        update_state("users updated")
-        log_action(f"created user {username} (role={role})")
-
-        CONFIG = load_config()
+    cfg = load_config()
 
     return render_template(
         "users.html",
-        users=CONFIG.get("users", {}),
-        error=None,
+        users=cfg.get("users", {}),
         user=session["user"],
         role=session.get("role"),
         state=load_state()
     )
+
+@app.post("/users/create")
+@login_required
+def users_create():
+    admin_required()
+    data = request.form or {}
+
+    username = (data.get("username") or "").strip()
+    password = (data.get("password") or "").strip()
+    role = data.get("role", "user")
+
+    cfg = load_config()
+
+    if not username or not password:
+        return render_template(
+            "users.html",
+            users=cfg.get("users", {}),
+            error="חובה להזין שם משתמש וסיסמה",
+            user=session["user"],
+            role=session.get("role"),
+            state=load_state()
+        )
+
+    if username in cfg["users"]:
+        return render_template(
+            "users.html",
+            users=cfg.get("users", {}),
+            error="שם משתמש כבר קיים",
+            user=session["user"],
+            role=session.get("role"),
+            state=load_state()
+        )
+
+    if len(password) < 6:
+        return render_template(
+            "users.html",
+            users=cfg.get("users", {}),
+            error="סיסמה חייבת להכיל לפחות 6 תווים",
+            user=session["user"],
+            role=session.get("role"),
+            state=load_state()
+        )
+
+    cfg["users"][username] = {
+        "password": password,
+        "role": role
+    }
+
+    save_config(cfg)
+    update_state("create user")
+    log_action("create user", [f"user={username}", f"role={role}"])
+
+    # ✅ חזרה למסך ניהול משתמשים + רענון
+    return redirect(url_for("users"))
+
+@app.post("/users/update")
+@login_required
+def users_update():
+    admin_required()
+    data = request.json or {}
+
+    username = data.get("username")
+    password = data.get("password")
+    role = data.get("role")
+
+    cfg = load_config()
+    user = cfg["users"].get(username)
+
+    if not user:
+        return jsonify(error="משתמש לא קיים"), 404
+
+    if password:
+        if len(password) < 6:
+            return jsonify(error="סיסמה קצרה מדי"), 400
+        user["password"] = password
+
+    if role:
+        user["role"] = role
+
+    save_config(cfg)
+    update_state("update user")
+    log_action("update user", [f"user={username}"])
+
+    return jsonify(ok=True)
+@app.post("/users/delete")
+@login_required
+def users_delete():
+    admin_required()
+    data = request.json or {}
+
+    username = data.get("username")
+    password = data.get("password")
+
+    current_user = session["user"]
+
+    # ❌ מניעת מחיקה עצמית
+    if username == current_user:
+        return jsonify(error="לא ניתן למחוק את המשתמש שמחובר כעת"), 400
+
+    cfg = load_config()
+
+    # 🔐 בדיקת סיסמה של המשתמש המחובר
+    admin_user = cfg["users"].get(current_user)
+    if not admin_user or admin_user["password"] != password:
+        return jsonify(error="סיסמה שגויה"), 403
+
+    # בדיקה שהמשתמש הנמחק קיים
+    if username not in cfg["users"]:
+        return jsonify(error="משתמש לא קיים"), 404
+
+    # ❗ לפחות מנהל אחד
+    admins = [u for u in cfg["users"].values() if u["role"] == "admin"]
+    if cfg["users"][username]["role"] == "admin" and len(admins) == 1:
+        return jsonify(error="חייב להישאר לפחות מנהל אחד"), 400
+
+    # מחיקה
+    del cfg["users"][username]
+    save_config(cfg)
+
+    update_state("delete user")
+    log_action(
+        "delete user",
+        [
+            f"deleted={username}",
+            f"by={current_user}"
+        ]
+    )
+
+    return jsonify(ok=True)
 
 @app.post("/reset")
 @login_required
