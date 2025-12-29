@@ -1,0 +1,21 @@
+{
+  "secret_key": "xdfgdfsgsdfgsfdfsdf",
+  "users": {
+    "admin": {
+      "password": "baradmin",
+      "role": "admin"
+    },
+    "user": {
+      "password": "user123",
+      "role": "user"
+    },
+    "test": {
+      "password": "test",
+      "role": "user"
+    },
+    "a": {
+      "password": "a",
+      "role": "admin"
+    }
+  }
+}

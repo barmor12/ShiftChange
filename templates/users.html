@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>ניהול משתמשים</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{font-family:Segoe UI,Arial; background:#f4f6fb; margin:0; color:#0f172a;}
+header{background:#fff; padding:18px 22px; border-bottom:1px solid #e5e7eb; display:flex; gap:10px; flex-wrap:wrap; align-items:center;}
+a{padding:10px 14px; border-radius:10px; text-decoration:none; color:#fff; background:#2563eb;}
+a.gray{background:#6b7280;}
+main{max-width:1100px; margin:20px auto; padding:0 16px;}
+.card{background:#fff; border:1px solid #e5e7eb; border-radius:14px; padding:16px; margin-bottom:14px;}
+input,select{padding:10px; border:1px solid #e5e7eb; border-radius:10px; width:100%; font-size:14px;}
+button{padding:10px 14px; border:none; border-radius:10px; cursor:pointer; background:#16a34a; color:#fff;}
+table{width:100%; border-collapse:collapse;}
+th,td{padding:10px; border-bottom:1px solid #e5e7eb; text-align:right;}
+th{background:#f8fafc; color:#64748b;}
+.row{display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:10px; align-items:end;}
+.err{color:#b91c1c; margin:8px 0 0;}
+.badge{display:inline-flex; gap:6px; align-items:center; font-size:12px; padding:6px 10px; border:1px solid #e5e7eb; border-radius:999px; background:#fff; color:#64748b;}
+.badge strong{color:#0f172a;}
+</style>
+</head>
+<body>
+
+<header>
+  <a class="gray" href="/">⬅ חזרה</a>
+  <a class="gray" href="/audit">📜 Audit</a>
+  <a class="gray" href="/logout">🚪 התנתקות</a>
+
+  {% if state and state.last_modified_by %}
+    <span class="badge">
+      עודכן לאחרונה ע"י <strong>{{ state.last_modified_by }}</strong> | {{ state.last_modified_at }}
+    </span>
+  {% endif %}
+</header>
+
+<main>
+  <div class="card">
+    <h2 style="margin:0 0 12px;">יצירת משתמש חדש</h2>
+
+    <form method="POST" class="row">
+      <div>
+        <label>שם משתמש</label>
+        <input name="username" placeholder="לדוגמה: mor" required>
+      </div>
+      <div>
+        <label>סיסמה</label>
+        <input name="password" placeholder="********" required>
+      </div>
+      <div>
+        <label>תפקיד</label>
+        <select name="role">
+          <option value="user">user</option>
+          <option value="admin">admin</option>
+        </select>
+      </div>
+      <div>
+        <button type="submit">➕ הוסף</button>
+      </div>
+    </form>
+
+    {% if error %}
+      <div class="err">{{ error }}</div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2 style="margin:0 0 12px;">רשימת משתמשים</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width:260px;">שם משתמש</th>
+          <th style="width:180px;">תפקיד</th>
+          <th>הערה</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for uname, udata in users.items() %}
+        <tr>
+          <td><strong>{{ uname }}</strong></td>
+          <td>{{ udata.role if udata.role else "user" }}</td>
+          <td>הסיסמה נשמרת ב־config.json (כמו שהגדרת)</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</main>
+
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>Audit Logs</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{font-family:Segoe UI,Arial; background:#f4f6fb; margin:0; color:#0f172a;}
+header{background:#fff; padding:18px 22px; border-bottom:1px solid #e5e7eb; display:flex; gap:10px; flex-wrap:wrap; align-items:center;}
+a,button{padding:10px 14px; border-radius:10px; border:none; cursor:pointer; text-decoration:none; color:#fff; background:#2563eb;}
+a.gray{background:#6b7280;}
+main{max-width:1200px; margin:20px auto; padding:0 16px;}
+table{width:100%; border-collapse:collapse; background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden;}
+th,td{padding:10px; border-bottom:1px solid #e5e7eb; font-size:14px; text-align:right;}
+th{background:#f8fafc; color:#64748b;}
+tr:hover td{background:#f1f5f9;}
+.badge{display:inline-flex; gap:6px; align-items:center; font-size:12px; padding:6px 10px; border:1px solid #e5e7eb; border-radius:999px; background:#fff; color:#64748b;}
+.badge strong{color:#0f172a;}
+</style>
+</head>
+<body>
+
+<header>
+  <a class="gray" href="/">⬅ חזרה</a>
+  <a class="gray" href="/users">👥 משתמשים</a>
+  <a class="gray" href="/logout">🚪 התנתקות</a>
+
+  {% if state and state.last_modified_by %}
+    <span class="badge">
+      עודכן לאחרונה ע"י <strong>{{ state.last_modified_by }}</strong> | {{ state.last_modified_at }}
+    </span>
+  {% endif %}
+</header>
+
+<main>
+  <h2 style="margin:10px 0 14px;">Audit Logs</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:190px;">תאריך</th>
+        <th style="width:200px;">משתמש</th>
+        <th>פעולה</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in logs %}
+      <tr>
+        <td>{{ row.ts }}</td>
+        <td><strong>{{ row.user }}</strong></td>
+        <td>{{ row.action }}</td>
+      </tr>
+      {% endfor %}
+      {% if logs|length == 0 %}
+      <tr><td colspan="3">אין לוגים עדיין</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+</main>
+
+</body>
+</html>

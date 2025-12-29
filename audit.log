@@ -1,0 +1,50 @@
+[29/12/2025 18:46:59] a | reset system
+[29/12/2025 18:47:06] a | save all
+[29/12/2025 18:47:26] a | save all
+[29/12/2025 18:47:53] a | update entry | employee=ילנה קפלן | date=2025-12-29 | shift=בוקר | value=השלמת שעות
+[29/12/2025 18:47:53] a | update entry | employee=ניסן שריקי | date=2025-12-30 | shift=בוקר | value=קיצור משמרת
+[29/12/2025 18:47:53] a | export excel
+[29/12/2025 18:50:03] a | login
+[29/12/2025 18:50:47] a | save all
+[29/12/2025 18:50:54] a | update entry | employee=ילנה קפלן | date=2025-12-29 | shift=ערב | value=קיצור משמרת
+[29/12/2025 18:50:54] a | update entry | employee=שלומי שושן | date=2025-12-29 | shift=ערב | value=לא הרגיש טוב
+[29/12/2025 18:50:54] a | update entry | employee=בר מור | date=2025-12-29 | shift=לילה | value=חולה
+[29/12/2025 18:50:54] a | update entry | employee=מיכאל אלבז | date=2025-12-29 | shift=בוקר | value=ביטול משמרת
+[29/12/2025 18:50:54] a | export excel
+[29/12/2025 18:54:50] a | login
+[29/12/2025 18:55:08] a | update entry | employee=ילנה קפלן | date=2025-12-29 | shift=ערב | value=קיצור משמרת
+[29/12/2025 18:55:08] a | update entry | employee=שלומי שושן | date=2025-12-29 | shift=ערב | value=לא הרגיש טוב
+[29/12/2025 18:55:08] a | update entry | employee=בר מור | date=2025-12-29 | shift=לילה | value=חולה
+[29/12/2025 18:55:08] a | update entry | employee=מיכאל אלבז | date=2025-12-29 | shift=בוקר | value=ביטול משמרת
+[29/12/2025 18:55:08] a | export excel
+[29/12/2025 18:57:01] a | login
+[29/12/2025 18:57:10] a | update entry | employee=ילנה קפלן | date=2025-12-29 | shift=ערב | value=קיצור משמרת
+[29/12/2025 18:57:10] a | update entry | employee=שלומי שושן | date=2025-12-29 | shift=ערב | value=לא הרגיש טוב
+[29/12/2025 18:57:10] a | update entry | employee=בר מור | date=2025-12-29 | shift=לילה | value=חולה
+[29/12/2025 18:57:10] a | update entry | employee=מיכאל אלבז | date=2025-12-29 | shift=בוקר | value=ביטול משמרת
+[29/12/2025 18:57:10] a | export excel
+[29/12/2025 19:00:18] a | login
+[29/12/2025 19:00:25] a | update entry | employee=ילנה קפלן | date=2025-12-29 | shift=ערב | value=קיצור משמרת
+[29/12/2025 19:00:25] a | update entry | employee=שלומי שושן | date=2025-12-29 | shift=ערב | value=לא הרגיש טוב
+[29/12/2025 19:00:25] a | update entry | employee=בר מור | date=2025-12-29 | shift=לילה | value=חולה
+[29/12/2025 19:00:25] a | update entry | employee=מיכאל אלבז | date=2025-12-29 | shift=בוקר | value=ביטול משמרת
+[29/12/2025 19:00:25] a | export excel
+[29/12/2025 19:02:58] a | login
+[29/12/2025 19:03:06] a | update entry | employee=ילנה קפלן | date=2025-12-29 | shift=ערב | value=קיצור משמרת
+[29/12/2025 19:03:06] a | update entry | employee=שלומי שושן | date=2025-12-29 | shift=ערב | value=לא הרגיש טוב
+[29/12/2025 19:03:06] a | update entry | employee=בר מור | date=2025-12-29 | shift=לילה | value=חולה
+[29/12/2025 19:03:06] a | update entry | employee=מיכאל אלבז | date=2025-12-29 | shift=בוקר | value=ביטול משמרת
+[29/12/2025 19:03:06] a | export excel
+[29/12/2025 19:06:11] a | login
+[29/12/2025 19:06:23] a | update entry | employee=ילנה קפלן | date=2025-12-29 | shift=ערב | value=קיצור משמרת
+[29/12/2025 19:06:23] a | update entry | employee=שלומי שושן | date=2025-12-29 | shift=ערב | value=לא הרגיש טוב
+[29/12/2025 19:06:23] a | update entry | employee=בר מור | date=2025-12-29 | shift=לילה | value=חולה
+[29/12/2025 19:06:23] a | update entry | employee=מיכאל אלבז | date=2025-12-29 | shift=בוקר | value=ביטול משמרת
+[29/12/2025 19:06:23] a | export excel
+[29/12/2025 19:08:15] a | login
+[29/12/2025 19:15:33] a | login
+[29/12/2025 19:15:39] a | update entry | employee=ילנה קפלן | date=2025-12-29 | shift=ערב | value=קיצור משמרת
+[29/12/2025 19:15:39] a | update entry | employee=שלומי שושן | date=2025-12-29 | shift=ערב | value=לא הרגיש טוב
+[29/12/2025 19:15:39] a | update entry | employee=בר מור | date=2025-12-29 | shift=לילה | value=חולה
+[29/12/2025 19:15:39] a | update entry | employee=מיכאל אלבז | date=2025-12-29 | shift=בוקר | value=ביטול משמרת
+[29/12/2025 19:15:39] a | export excel

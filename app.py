@@ -1,0 +1,580 @@
+from flask import (
+    Flask, render_template, request,
+    send_file, after_this_request,
+    redirect, url_for, session, abort, jsonify
+)
+import openpyxl
+from openpyxl.styles import PatternFill, Border, Side, Alignment, Font
+import datetime as dt
+import tempfile
+import os
+import json
+import time
+from functools import wraps
+
+# ================= CONFIG =================
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+TEMPLATE = os.path.join(APP_DIR, "מבנה.xlsx")
+CONFIG_FILE = os.path.join(APP_DIR, "config.json")
+STATE_FILE = os.path.join(APP_DIR, "state.json")
+LOG_FILE = os.path.join(APP_DIR, "audit.log")
+BOOT_FILE = os.path.join(APP_DIR, "boot.json")
+
+def load_config():
+    with open(CONFIG_FILE, encoding="utf-8") as f:
+        return json.load(f)
+
+CONFIG = load_config()
+
+app = Flask(__name__)
+app.secret_key = CONFIG["secret_key"]
+app.permanent_session_lifetime = dt.timedelta(hours=24)
+
+# ================= BOOT ID (invalidate sessions after server restart) =================
+def _write_boot_id():
+    boot = {"boot_id": f"{int(time.time())}"}
+    try:
+        with open(BOOT_FILE, "w", encoding="utf-8") as f:
+            json.dump(boot, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+    return boot["boot_id"]
+
+def _read_boot_id():
+    try:
+        if os.path.exists(BOOT_FILE):
+            with open(BOOT_FILE, encoding="utf-8") as f:
+                data = json.load(f)
+                if data.get("boot_id"):
+                    return data["boot_id"]
+    except Exception:
+        pass
+    return _write_boot_id()
+
+CURRENT_BOOT_ID = _write_boot_id()
+
+# ================= SESSION CHECK =================
+@app.before_request
+def check_login_timeout():
+    if request.endpoint in ("login", "static"):
+        return
+
+    if "user" not in session:
+        return redirect(url_for("login"))
+
+    # force re-login after server restart
+    if session.get("boot_id") != CURRENT_BOOT_ID:
+        session.clear()
+        return redirect(url_for("login"))
+
+    login_at = session.get("login_at")
+    if login_at:
+        try:
+            login_time = dt.datetime.fromisoformat(login_at)
+            if dt.datetime.now() - login_time > dt.timedelta(hours=24):
+                session.clear()
+                return redirect(url_for("login"))
+        except Exception:
+            session.clear()
+            return redirect(url_for("login"))
+
+# ================= STYLES =================
+YELLOW = PatternFill("solid", fgColor="FFF2CC")
+TEAM_FILL = PatternFill("solid", fgColor="FFE699")
+HEADER_FILL = PatternFill("solid", fgColor="E7E6E6")
+
+THIN = Side(style="thin")
+THICK = Side(style="thick")
+
+BORDER_THIN = Border(left=THIN, right=THIN, top=THIN, bottom=THIN)
+BORDER_THICK = Border(left=THICK, right=THICK, top=THICK, bottom=THICK)
+
+ALIGN_CENTER = Alignment(horizontal="center", vertical="center", wrap_text=True)
+FONT_BOLD = Font(bold=True)
+
+# ================= CONSTANTS =================
+NAME_COL = 1
+ID_COL = 2
+HEADER_DATE_ROW = 4
+HEADER_SHIFT_ROW = 5
+
+# ✅ FIX: employees must start AFTER the shift header row (otherwise first employee “falls” into headers row)
+EMP_START_ROW = 6
+
+SHIFT_TYPES = ["בוקר", "ערב", "לילה"]
+
+ACTIONS = [
+    "השלמת שעות",
+    "קיצור משמרת",
+    "ביטול משמרת",
+    "מחלה",
+    "מילואים",
+    "חופש",
+]
+
+# ================= HELPERS =================
+def log_action(action, details=None):
+    ts = dt.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    user = session.get("user", "anonymous")
+
+    line = f"[{ts}] {user} | {action}"
+    if details:
+        line += " | " + " | ".join(details)
+
+    with open(LOG_FILE, "a", encoding="utf-8") as f:
+        f.write(line + "\n")
+def find_first_employee_row(ws):
+    """
+    מחפש את השורה הראשונה שבה:
+    - יש שם
+    - ויש תעודת זהות
+    - והיא מתחת לשורת המשמרות
+    """
+    row = HEADER_SHIFT_ROW + 1
+    max_row = ws.max_row
+
+    while row <= max_row:
+        name = ws.cell(row, NAME_COL).value
+        emp_id = ws.cell(row, ID_COL).value
+
+        if name and emp_id:
+            return row
+
+        row += 1
+
+    return HEADER_SHIFT_ROW + 1
+
+def update_state(action_name=None):
+    data = {
+        "last_modified_by": session.get("user"),
+        "last_modified_at": dt.datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+    }
+    with open(STATE_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+    if action_name:
+        log_action(action_name)
+
+def load_state():
+    if not os.path.exists(STATE_FILE):
+        return {"last_modified_by": "", "last_modified_at": ""}
+    try:
+        with open(STATE_FILE, encoding="utf-8") as f:
+            data = json.load(f)
+        return {
+            "last_modified_by": data.get("last_modified_by", ""),
+            "last_modified_at": data.get("last_modified_at", "")
+        }
+    except Exception:
+        return {"last_modified_by": "", "last_modified_at": ""}
+
+def apply_border(ws, sr, er, sc, ec, thick=False):
+    border = BORDER_THICK if thick else BORDER_THIN
+    for r in range(sr, er + 1):
+        for c in range(sc, ec + 1):
+            ws.cell(r, c).border = border
+
+def daterange(start, end):
+    d = start
+    while d <= end:
+        yield d
+        d += dt.timedelta(days=1)
+
+def safe_remove(path):
+    try:
+        os.remove(path)
+    except Exception:
+        pass
+
+def read_audit_logs(max_lines=500):
+    if not os.path.exists(LOG_FILE):
+        return []
+    try:
+        with open(LOG_FILE, encoding="utf-8") as f:
+            lines = f.readlines()[-max_lines:]
+        logs = []
+        for line in reversed(lines):
+            line = line.strip()
+            if not line:
+                continue
+            if line.startswith("[") and "]" in line and " | " in line:
+                ts = line[1:line.index("]")]
+                rest = line[line.index("]") + 1:].strip()
+                if " | " in rest:
+                    user, action = rest.split(" | ", 1)
+                    logs.append({"ts": ts, "user": user.strip(), "action": action.strip()})
+        return logs
+    except Exception:
+        return []
+
+def save_config(cfg):
+    with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+        json.dump(cfg, f, ensure_ascii=False, indent=2)
+
+def _parse_date(value):
+    return dt.datetime.strptime(value, "%Y-%m-%d").date()
+
+def _clear_dynamic_columns_only(ws):
+    """
+    חשוב: לא עושים UNMERGE גורף!
+    מפרקים רק מיזוגים שנוגעים בעמודות הדינמיות (C והלאה),
+    ואז מוחקים רק את העמודות C..END כדי לבנות מחדש את טווח התאריכים.
+    """
+    try:
+        merged = list(ws.merged_cells.ranges)
+        for rng in merged:
+            # אם המיזוג נוגע בעמודה 3 ומעלה (C..), מפרקים אותו
+            if getattr(rng, "max_col", 0) >= 3:
+                try:
+                    ws.unmerge_cells(str(rng))
+                except Exception:
+                    pass
+    except Exception:
+        pass
+
+    # מחיקת העמודות הדינמיות (C והלאה) בלבד
+    if ws.max_column > 2:
+        ws.delete_cols(3, ws.max_column - 2)
+
+# ================= AUTH =================
+def login_required(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        if "user" not in session:
+            return redirect(url_for("login"))
+        return fn(*args, **kwargs)
+    return wrapper
+
+def admin_required():
+    if session.get("role") != "admin":
+        abort(403)
+
+# ================= LOAD TEAMS =================
+def load_teams_with_rows():
+    wb = openpyxl.load_workbook(TEMPLATE)
+    ws = wb.active
+
+    teams = {}
+    team_rows = {}
+    current_team = None
+    default_team = "מנהלי משמרת"
+
+    row = find_first_employee_row(ws)
+    empty = 0
+
+    while empty < 10:
+
+        name = ws.cell(row, NAME_COL).value
+        emp_id = ws.cell(row, ID_COL).value
+        print(
+        f"ROW {row} | name={repr(name)} | emp_id={repr(emp_id)}"
+)
+
+        if not name:
+            empty += 1
+            row += 1
+            continue
+
+        empty = 0
+        name = str(name).strip()
+
+# בדיקה אם השורה ממוזגת לרוחב → צוות
+        is_team_row = any(
+            rng.min_row == row and rng.max_row == row
+            for rng in ws.merged_cells.ranges
+        )
+
+        if is_team_row:
+            current_team = name
+            teams.setdefault(current_team, [])
+            team_rows[current_team] = row
+        else:
+            team_key = current_team or default_team
+            teams.setdefault(team_key, [])
+            teams[team_key].append({
+                "name": name,
+                "row": row
+            })
+
+        row += 1
+
+    return teams, team_rows
+
+def load_teams():
+    teams, _ = load_teams_with_rows()
+    return teams
+
+# ================= HEADERS =================
+def build_report_headers(ws, start_date, end_date):
+    col = 3
+    for d in daterange(start_date, end_date):
+        start_col = col
+        end_col = col + 2
+
+        ws.merge_cells(
+            start_row=HEADER_DATE_ROW,
+            start_column=start_col,
+            end_row=HEADER_DATE_ROW,
+            end_column=end_col
+        )
+
+        dc = ws.cell(HEADER_DATE_ROW, start_col)
+        dc.value = d
+        dc.number_format = "DD.MM.YY"
+        dc.font = FONT_BOLD
+        dc.alignment = ALIGN_CENTER
+        dc.fill = HEADER_FILL
+
+        for i, shift in enumerate(SHIFT_TYPES):
+            c = ws.cell(HEADER_SHIFT_ROW, start_col + i)
+            c.value = f"משמרת {shift}"
+            c.font = FONT_BOLD
+            c.alignment = ALIGN_CENTER
+            c.fill = HEADER_FILL
+            c.border = BORDER_THIN
+
+        apply_border(ws, HEADER_DATE_ROW, HEADER_SHIFT_ROW, start_col, end_col, thick=True)
+        col += 3
+
+# ================= ROUTES =================
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    global CONFIG
+    if request.method == "POST":
+        u = request.form.get("username")
+        p = request.form.get("password")
+
+        CONFIG = load_config()
+        user = CONFIG["users"].get(u)
+
+        if user and user.get("password") == p:
+            session.clear()
+            session["user"] = u
+            session["role"] = user.get("role", "user")
+            session["login_at"] = dt.datetime.now().isoformat()
+            session["boot_id"] = CURRENT_BOOT_ID
+            session.permanent = True
+            log_action("login")
+            return redirect(url_for("index"))
+
+        return render_template("login.html", error="שם משתמש או סיסמה שגויים")
+
+    return render_template("login.html")
+
+@app.route("/logout")
+def logout():
+    log_action("logout")
+    session.clear()
+    return redirect(url_for("login"))
+
+@app.route("/")
+@login_required
+def index():
+    return render_template(
+        "index.html",
+        teams=load_teams(),
+        actions=ACTIONS,
+        shifts=[""] + SHIFT_TYPES,
+        user=session["user"],
+        role=session.get("role"),
+        state=load_state()
+    )
+
+@app.get("/audit")
+@login_required
+def audit():
+    admin_required()
+    logs = read_audit_logs(max_lines=800)
+    return render_template(
+        "audit.html",
+        logs=logs,
+        user=session["user"],
+        role=session.get("role"),
+        state=load_state()
+    )
+
+@app.route("/users", methods=["GET", "POST"])
+@login_required
+def users():
+    admin_required()
+    global CONFIG
+    CONFIG = load_config()
+
+    if request.method == "POST":
+        data = request.form or {}
+        username = (data.get("username") or "").strip()
+        password = (data.get("password") or "").strip()
+        role = (data.get("role") or "user").strip()
+
+        if not username or not password:
+            return render_template(
+                "users.html",
+                users=CONFIG.get("users", {}),
+                error="חובה להזין שם משתמש וסיסמה",
+                user=session["user"],
+                role=session.get("role"),
+                state=load_state()
+            )
+
+        CONFIG.setdefault("users", {})
+        if username in CONFIG["users"]:
+            return render_template(
+                "users.html",
+                users=CONFIG.get("users", {}),
+                error="שם משתמש כבר קיים",
+                user=session["user"],
+                role=session.get("role"),
+                state=load_state()
+            )
+
+        CONFIG["users"][username] = {"password": password, "role": role}
+        save_config(CONFIG)
+        update_state("users updated")
+        log_action(f"created user {username} (role={role})")
+
+        CONFIG = load_config()
+
+    return render_template(
+        "users.html",
+        users=CONFIG.get("users", {}),
+        error=None,
+        user=session["user"],
+        role=session.get("role"),
+        state=load_state()
+    )
+
+@app.post("/reset")
+@login_required
+def reset():
+    admin_required()
+
+    if os.path.exists(STATE_FILE):
+        os.remove(STATE_FILE)
+
+    if os.path.exists(LOG_FILE):
+        os.remove(LOG_FILE)
+
+    update_state("reset system")   # ← זה מה שחסר
+    return jsonify({"ok": True})
+
+@app.post("/touch")
+@login_required
+def touch():
+    log_action("save all")
+    return jsonify({"ok": True})
+
+@app.post("/export")
+@login_required
+def export():
+    data = request.json or {}
+
+    # --- validate input ---
+    try:
+        report_from = _parse_date(data["report_from"])
+        report_to = _parse_date(data["report_to"])
+    except Exception:
+        return jsonify({"error": "report_from/report_to invalid. expected YYYY-MM-DD"}), 400
+
+    if report_to < report_from:
+        return jsonify({"error": "טווח תאריכים לא תקין: 'עד' קטן מ-'מדוח'"}), 400
+
+    entries = data.get("entries", [])
+    if not entries:
+        return jsonify({"error": "no entries to export"}), 400
+
+    wb = openpyxl.load_workbook(TEMPLATE)
+    ws = wb.active
+
+    # ✅ FIX: clean only dynamic columns (C..), without destroying static header merges
+    _clear_dynamic_columns_only(ws)
+
+    # build dynamic headers for the selected range
+    build_report_headers(ws, report_from, report_to)
+
+    teams, team_rows = load_teams_with_rows()
+    emp_row = {e["name"]: e["row"] for t in teams.values() for e in t}
+
+    # map (date, shift) -> column
+    col_map = {}
+
+    col = 3
+    for d in daterange(report_from, report_to):
+        for i, shift in enumerate(SHIFT_TYPES):
+            col_map[(d, shift)] = col + i
+        col += 3
+
+    for e in entries:
+        try:
+            date = _parse_date(e["date"])
+        except Exception:
+            continue
+
+        if not (report_from <= date <= report_to):
+            continue
+
+        name = e.get("name")
+        shift = e.get("shift")
+        action = (e.get("action") or "").strip()
+        note = (e.get("note") or "").strip()
+
+        if not name or not shift or name not in emp_row:
+            continue
+
+        col = col_map.get((date, shift))
+        if not col:
+            continue
+
+        text = action
+        if note:
+            text = f"{action} – {note}" if action else note
+
+        # ✅ AUDIT DETAILS: who changed what (per entry written to the report)
+        log_action(
+            "update entry",
+            details=[
+                f"employee={name}",
+                f"date={e.get('date')}",
+                f"shift={shift}",
+                f"value={text}"
+            ]
+        )
+
+        cell = ws.cell(emp_row[name], col)
+        cell.value = text
+        cell.fill = YELLOW
+        cell.border = BORDER_THIN
+        cell.alignment = ALIGN_CENTER
+
+    # global borders
+    apply_border(ws, 1, ws.max_row, 1, ws.max_column)
+
+    # team header rows (merge across current max_column)
+    for team, r in team_rows.items():
+        try:
+            ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=ws.max_column)
+        except Exception:
+            pass
+        c = ws.cell(r, 1)
+        c.value = team
+        c.fill = TEAM_FILL
+        c.font = FONT_BOLD
+        c.alignment = ALIGN_CENTER
+        apply_border(ws, r, r, 1, ws.max_column, thick=True)
+
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx")
+    path = tmp.name
+    tmp.close()
+    wb.save(path)
+
+    # ✅ no duplicate "export excel" lines (update_state already logs action_name)
+    update_state("export excel")
+
+    @after_this_request
+    def cleanup(resp):
+        safe_remove(path)
+        return resp
+
+    return send_file(path, as_attachment=True, download_name="hours_report.xlsx")
+
+if __name__ == "__main__":
+    app.run(debug=True)
