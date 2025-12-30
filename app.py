@@ -240,6 +240,8 @@ def _clear_dynamic_columns_only(ws):
         ws.delete_cols(3, ws.max_column - 2)
 
 # ================= AUTH =================
+def is_super_admin():
+    return session.get("user") == CONFIG.get("super_admin")
 def login_required(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
@@ -377,7 +379,10 @@ def index():
         shifts=[""] + SHIFT_TYPES,
         user=session["user"],
         role=session.get("role"),
-        state=load_state()
+        state=load_state(),
+        config=CONFIG
+
+
     )
 
 @app.get("/audit")
@@ -538,7 +543,9 @@ def users_delete():
 @app.post("/reset")
 @login_required
 def reset():
-    admin_required()
+    # 🔐 רק מנהל המערכת הראשי
+    if session.get("user") != CONFIG.get("super_admin"):
+        abort(403)
 
     if os.path.exists(STATE_FILE):
         os.remove(STATE_FILE)
@@ -547,7 +554,7 @@ def reset():
         os.remove(LOG_FILE)
 
     if os.path.exists(PAYROLL_STATUS_PATH):
-        os.remove(PAYROLL_STATUS_PATH)  # 🔥 זה החסר
+        os.remove(PAYROLL_STATUS_PATH)
 
     update_state("reset system")
     return jsonify({"ok": True})

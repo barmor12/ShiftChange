@@ -1,5 +1,6 @@
 {
   "secret_key": "xdfgdfsgsdfgsfdfsdf",
+  "super_admin": "admin",
   "users": {
     "admin": {
       "password": "baradmin",
@@ -7,10 +8,6 @@
     },
     "a": {
       "password": "a",
-      "role": "admin"
-    },
-    "test": {
-      "password": "test12",
       "role": "admin"
     }
   }

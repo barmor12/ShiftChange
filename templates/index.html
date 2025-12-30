@@ -429,7 +429,9 @@ html {
       <button class="navbtn" id="themeBtn" onclick="toggleTheme()">🌙</button>
         <button class="navbtn" onclick="goUsers()">👥 משתמשים</button>
         <button class="navbtn" onclick="goAudit()">📜 Audit</button>
-        <button class="navbtn danger" onclick="resetSystem()">♻ איפוס</button>
+        {% if user == config.super_admin %}
+          <button class="navbtn danger" onclick="resetSystem()">♻ איפוס</button>
+        {% endif %}
           <label class="btn" style="cursor:pointer">
             📥 העלאת אקסל שכר
             <input
