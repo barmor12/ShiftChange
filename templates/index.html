@@ -473,8 +473,10 @@ html {
                 <thead>
                   <tr>
                     <th style="width:28%">עובד</th>
+                    <th style="width:14%">משמרת מקור</th>
                     <th style="width:18%">משמרת</th>
                     <th style="width:22%">סוג השלמה</th>
+                    
                     <th>מלל חופשי</th>
                   </tr>
                 </thead>
@@ -482,7 +484,14 @@ html {
                   {% for e in members %}
                     <tr data-name="{{ e.name }}">
                       <td data-label="עובד"><span class="cell-strong">{{ e.name }}</span></td>
-
+                      <td data-label="משמרת מקור">
+                      <select class="select originShift">
+                        <option value="">—</option>
+                        <option value="בוקר">בוקר</option>
+                        <option value="צהריים">צהריים</option>
+                        <option value="ערב">ערב</option>
+                      </select>
+                    </td>
                       <td data-label="משמרת">
                         <select class="select shift">
                           {% for s in shifts %}
@@ -499,8 +508,13 @@ html {
                         </select>
                       </td>
 
-                      <td data-label="מלל חופשי">
-                        <input class="noteInput" placeholder="הערה קצרה…" />
+                      <td data-label="סיבה">
+                        <select class="select reason">
+                          <option value="">— בחר סיבה —</option>
+                          <option value="אוניה ביטחונית">אוניה ביטחונית</option>
+                          <option value="צרכי מערכת">צרכי מערכת</option>
+                          <option value="ביטול משמרת השלמה לתקן">ביטול משמרת השלמה לתקן</option>
+                        </select>
                       </td>
                     </tr>
                   {% endfor %}
@@ -588,9 +602,10 @@ function saveDraftForRow(tr){
   drafts[date][tr.dataset.name] = {
     date,
     name: tr.dataset.name,
+    originShift: tr.querySelector(".originShift").value, // ✅ חדש
     shift: tr.querySelector(".shift").value,
     action: tr.querySelector(".action").value,
-    note: tr.querySelector(".noteInput").value
+    reason: tr.querySelector(".reason").value
   };
 
   saveLocalImmediate(); // ✅ שמירה אמיתית
@@ -600,7 +615,7 @@ function saveDraftForRow(tr){
 
 /* ================== EVENTS ================== */
 document.body.addEventListener("change", e=>{
-  if(!e.target.matches(".shift,.action")) return;
+  if(!e.target.matches(".shift,.action,.originShift,.reason")) return;
   const tr = e.target.closest("tr[data-name]");
   if(tr) saveDraftForRow(tr);
 });
@@ -622,9 +637,10 @@ document.body.addEventListener("click", e=>{
 function loadDateToUI(date){
   document.querySelectorAll("tr[data-name]").forEach(tr=>{
     const d = drafts?.[date]?.[tr.dataset.name];
+    tr.querySelector(".originShift").value = d?.originShift || ""; // ✅
     tr.querySelector(".shift").value = d?.shift || "";
     tr.querySelector(".action").value = d?.action || "";
-    tr.querySelector(".noteInput").value = d?.note || "";
+    tr.querySelector(".reason").value = d?.reason || "";
     tr.classList.toggle("row-saved", !!d);
   });
 }
@@ -718,7 +734,7 @@ function exportExcel(){
           name: d.name,
           shift: d.shift,
           action: d.action,
-          note: d.note
+          note: d.reason || ""
         });
       }
     }
