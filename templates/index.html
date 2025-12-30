@@ -387,6 +387,19 @@ html {
 .last-update span{
   opacity:.8;
 }
+
+/* ===== PAYROLL STATUS ===== */
+.payroll-dot{
+  display:inline-block;
+  width:12px;
+  height:12px;
+  border-radius:50%;
+  background:#94a3b8; /* אפור = לא טופל */
+}
+
+.payroll-dot.done{
+  background:#f59e0b; /* כתום = טופל בשכר */
+}
 </style>
 </head>
 
@@ -417,6 +430,15 @@ html {
         <button class="navbtn" onclick="goUsers()">👥 משתמשים</button>
         <button class="navbtn" onclick="goAudit()">📜 Audit</button>
         <button class="navbtn danger" onclick="resetSystem()">♻ איפוס</button>
+          <label class="btn" style="cursor:pointer">
+            📥 העלאת אקסל שכר
+            <input
+              type="file"
+              accept=".xlsx"
+              hidden
+              onchange="uploadPayrollExcel(this.files[0])"
+            />
+          </label>
       {% endif %}
 
       <button class="navbtn" onclick="logout()">🚪 התנתקות</button>
@@ -473,6 +495,7 @@ html {
                 <thead>
                   <tr>
                     <th style="width:28%">עובד</th>
+                    <th style="width:12%">שכר</th> <!-- ✅ חדש -->
                     <th style="width:14%">משמרת מקור</th>
                     <th style="width:18%">משמרת</th>
                     <th style="width:22%">סוג השלמה</th>
@@ -483,13 +506,20 @@ html {
                 <tbody>
                   {% for e in members %}
                     <tr data-name="{{ e.name }}">
-                      <td data-label="עובד"><span class="cell-strong">{{ e.name }}</span></td>
+                      <td data-label="עובד">
+                        <span class="cell-strong">{{ e.name }}</span>
+                      </td>
+
+                      <!-- ✅ חיווי שכר -->
+                      <td data-label="שכר">
+                        <span class="payroll-dot" title="לא דווח לשכר"></span>
+                      </td>
                       <td data-label="משמרת מקור">
                       <select class="select originShift">
                         <option value="">—</option>
                         <option value="בוקר">בוקר</option>
-                        <option value="צהריים">צהריים</option>
                         <option value="ערב">ערב</option>
+                        <option value="לילה">לילה</option>
                       </select>
                     </td>
                       <td data-label="משמרת">
@@ -550,6 +580,7 @@ const toastText  = document.getElementById("toastText");
 const LS_KEY = "hoursDrafts_v4";
 let drafts = {};
 let currentDate = null;
+let payrollStatus = {};
 
 /* ================== HELPERS ================== */
 function setStatus(msg, type="idle"){
@@ -558,6 +589,41 @@ function setStatus(msg, type="idle"){
   if(type==="ok") statusDot.classList.add("ok");
   if(type==="warn") statusDot.classList.add("warn");
   if(type==="bad") statusDot.classList.add("bad");
+}
+
+function loadPayrollStatus(){
+  fetch("/payroll-status")
+    .then(r => r.json())
+    .then(data => {
+      payrollStatus = data || {};
+      refreshPayrollDots();
+    });
+}
+function refreshPayrollDots(){
+  if(!currentDate) return;
+
+  document.querySelectorAll("tr[data-name]").forEach(tr=>{
+    const name = tr.dataset.name;
+    const shift = tr.querySelector(".shift")?.value;
+    const dot = tr.querySelector(".payroll-dot");
+
+    if(!dot){
+      return;
+    }
+
+    if(!shift){
+      dot.classList.remove("done");
+      dot.title = "בחר משמרת";
+      return;
+    }
+
+const done = Object.keys(payrollStatus).some(k =>
+  k.endsWith(`|${name}|${shift}`) && payrollStatus[k]?.done
+);
+
+    dot.classList.toggle("done", !!done);
+    dot.title = done ? "דווח לשכר" : "טרם דווח לשכר";
+  });
 }
 
 function showToast(title, text){
@@ -586,7 +652,29 @@ function loadLocal(){
 function saveLocalImmediate(){
   localStorage.setItem(LS_KEY, JSON.stringify(drafts));
 }
+function uploadPayrollExcel(file){
+  if(!file) return;
 
+  const fd = new FormData();
+  fd.append("file", file);
+
+  fetch("/upload-payroll", {
+    method: "POST",
+    body: fd
+  })
+  .then(r => {
+    if(!r.ok) throw new Error();
+    return r.json();
+  })
+  .then(() => {
+    loadPayrollStatus(); // 🔥 זה העיקר
+    console.log("PAYROLL STATUS LOADED", payrollStatus);
+    showToast("הצלחה", "אקסל השכר נטען");
+  })
+  .catch(()=>{
+    showToast("שגיאה", "טעינת האקסל נכשלה");
+  });
+}
 /* ================== DRAFT ================== */
 function saveDraftForRow(tr){
   if(!workDate.value){
@@ -606,11 +694,13 @@ function saveDraftForRow(tr){
     shift: tr.querySelector(".shift").value,
     action: tr.querySelector(".action").value,
     reason: tr.querySelector(".reason").value
+    
   };
 
   saveLocalImmediate(); // ✅ שמירה אמיתית
   tr.classList.add("row-saved");
   setStatus("טיוטה נשמרה", "ok");
+  refreshPayrollDots();
 }
 
 /* ================== EVENTS ================== */
@@ -643,6 +733,7 @@ function loadDateToUI(date){
     tr.querySelector(".reason").value = d?.reason || "";
     tr.classList.toggle("row-saved", !!d);
   });
+  refreshPayrollDots();
 }
 
 workDate.addEventListener("change", ()=>{
@@ -672,13 +763,13 @@ function saveAll(){
 
   for(const byName of Object.values(drafts)){
     for(const d of Object.values(byName)){
-      if(d.shift && (d.action || d.note)){
+      if(d.shift && (d.action || d.reason)){
         entries.push({
           date: d.date,
           name: d.name,
           shift: d.shift,
           action: d.action,
-          note: d.note
+          note: d.reason || ""
         });
       }
     }
@@ -728,7 +819,7 @@ function exportExcel(){
     if(date < reportFrom.value || date > reportTo.value) continue;
 
     for(const d of Object.values(byName)){
-      if(d.shift && (d.action || d.note)){
+      if(d.shift && (d.action || d.reason)){
         rows.push({
           date: d.date,
           name: d.name,
@@ -785,6 +876,7 @@ workDate.value ||= today;
 currentDate = workDate.value;
 loadDateToUI(currentDate);
 setStatus("מוכן","ok");
+loadPayrollStatus();
 /* ================== THEME ================== */
 const THEME_KEY = "ui_theme";
 

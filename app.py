@@ -5,6 +5,8 @@ from flask import (
 )
 import openpyxl
 from openpyxl.styles import PatternFill, Border, Side, Alignment, Font
+import openpyxl
+from openpyxl import load_workbook  
 import datetime as dt
 import tempfile
 import os
@@ -30,7 +32,7 @@ CONFIG = load_config()
 app = Flask(__name__)
 app.secret_key = CONFIG["secret_key"]
 app.permanent_session_lifetime = dt.timedelta(hours=24)
-
+EXPORT_YELLOW = "FFF2CC"
 # ================= BOOT ID (invalidate sessions after server restart) =================
 def _write_boot_id():
     boot = {"boot_id": f"{int(time.time())}"}
@@ -533,7 +535,6 @@ def users_delete():
     )
 
     return jsonify(ok=True)
-
 @app.post("/reset")
 @login_required
 def reset():
@@ -545,7 +546,10 @@ def reset():
     if os.path.exists(LOG_FILE):
         os.remove(LOG_FILE)
 
-    update_state("reset system")   # ← זה מה שחסר
+    if os.path.exists(PAYROLL_STATUS_PATH):
+        os.remove(PAYROLL_STATUS_PATH)  # 🔥 זה החסר
+
+    update_state("reset system")
     return jsonify({"ok": True})
 
 @app.post("/touch")
@@ -684,6 +688,223 @@ def export():
         return resp
 
     return send_file(path, as_attachment=True, download_name="hours_report.xlsx")
+
+
+def is_marked_as_done(cell) -> bool:
+    fill = getattr(cell, "fill", None)
+    if not fill or fill.patternType != "solid":
+        return False
+
+    sc = fill.start_color
+    if not sc or not sc.rgb:
+        return False
+
+    # ⭐️ זה התיקון הקריטי
+    rgb = str(sc.rgb).upper()
+
+    # אם הצבע שונה מהצהוב שהמערכת ייצרה → נחשב "טופל"
+    return rgb != EXPORT_YELLOW
+
+def is_payroll_orange(cell) -> bool:
+    fill = getattr(cell, "fill", None)
+    if not fill or fill.patternType != "solid":
+        return False
+
+    sc = fill.start_color
+    if not sc or sc.type != "rgb" or not sc.rgb:
+        return False
+
+    rgb = sc.rgb.upper()
+
+    # ✅ רק כתום בלבד
+    return rgb in {
+        "FFFFC000",  # כתום Excel נפוץ
+        "FFFFA500",  # Orange
+        "00FFC000",  # לפעמים בלי FF
+    }
+
+def _to_date_iso(v):
+    # header date cell יכול להיות date/datetime/str
+    if isinstance(v, dt.datetime):
+        return v.date().isoformat()
+    if isinstance(v, dt.date):
+        return v.isoformat()
+    if isinstance(v, str):
+        v = v.strip()
+        # אם אצלך מופיע "01.01.25" או דומה - אפשר להרחיב פה
+        try:
+            # אם זה מגיע כ-YYYY-MM-DD
+            return dt.datetime.strptime(v, "%Y-%m-%d").date().isoformat()
+        except Exception:
+            pass
+    return None
+
+def build_col_meta_from_export(ws):
+    """
+    קורא את האקסל 'המטריצי' שיוצא מהמערכת:
+    - תאריך בשורה HEADER_DATE_ROW (4) עם מיזוגים
+    - משמרת בשורה HEADER_SHIFT_ROW (5)
+    מחזיר dict: {col_index: (date_iso, shift_name)}
+    """
+    meta = {}
+
+    for col in range(3, ws.max_column + 1):
+        # date: לפעמים הערך נמצא רק בעמודה הראשונה של המיזוג
+        dv = ws.cell(HEADER_DATE_ROW, col).value
+        if not dv:
+            # נלך שמאלה עד שנמצא ערך (כדי להתמודד עם merged header)
+            c = col
+            while c >= 3 and not ws.cell(HEADER_DATE_ROW, c).value:
+                c -= 1
+            dv = ws.cell(HEADER_DATE_ROW, c).value if c >= 3 else None
+
+        date_iso = _to_date_iso(dv)
+        if not date_iso:
+            continue
+
+        sv = ws.cell(HEADER_SHIFT_ROW, col).value or ""
+        sv = str(sv).strip()
+        # מצפה ל"משמרת בוקר" / "משמרת ערב" / "משמרת לילה"
+        shift = sv.replace("משמרת", "").replace("\xa0", " ").strip() if sv else ""
+        if not shift:
+            continue
+
+        meta[col] = (date_iso, shift)
+
+    return meta
+
+def is_team_row(ws, row):
+    # אם השורה ממוזגת לרוחב => זו שורת צוות
+    try:
+        return any(rng.min_row == row and rng.max_row == row for rng in ws.merged_cells.ranges)
+    except Exception:
+        return False
+PAYROLL_STATUS_PATH = os.path.join(APP_DIR, "data", "payroll_status.json")
+
+def load_payroll_status():
+    if not os.path.exists(PAYROLL_STATUS_PATH):
+        return {}
+    with open(PAYROLL_STATUS_PATH, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+def save_payroll_status(data):
+    os.makedirs(os.path.dirname(PAYROLL_STATUS_PATH), exist_ok=True)
+    with open(PAYROLL_STATUS_PATH, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+def cell_fill_debug(cell) -> dict:
+    """
+    מחזיר פירוט 'בטוח' על fill כדי להבין למה לא נתפס.
+    """
+    try:
+        f = cell.fill
+        sc = f.start_color if f else None
+        return {
+            "patternType": getattr(f, "patternType", None),
+            "fgType": getattr(getattr(f, "fgColor", None), "type", None),
+            "fgRgb": getattr(getattr(f, "fgColor", None), "rgb", None),
+            "fgIdx": getattr(getattr(f, "fgColor", None), "indexed", None),
+            "fgTheme": getattr(getattr(f, "fgColor", None), "theme", None),
+            "fgTint": getattr(getattr(f, "fgColor", None), "tint", None),
+            "scType": getattr(sc, "type", None),
+            "scRgb": getattr(sc, "rgb", None),
+            "scIdx": getattr(sc, "indexed", None),
+            "scTheme": getattr(sc, "theme", None),
+            "scTint": getattr(sc, "tint", None),
+        }
+    except Exception as ex:
+        return {"error": str(ex)}
+
+
+
+
+
+@app.route("/upload-payroll", methods=["POST"])
+@login_required
+def upload_payroll():
+    if session.get("role") != "admin":
+        return jsonify({"error": "forbidden"}), 403
+
+    file = request.files.get("file")
+    if not file:
+        return jsonify({"error": "missing file"}), 400
+
+    try:
+        wb = openpyxl.load_workbook(file, data_only=False)
+        ws = wb.active
+    except Exception as ex:
+        return jsonify({"error": f"failed to read xlsx: {ex}"}), 400
+
+    # col -> (date_iso, shift)
+    col_meta = build_col_meta_from_export(ws)
+
+    payroll = load_payroll_status()
+    now = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    by = session.get("user", "admin")
+
+    updated = 0
+    scanned_cells = 0
+    marked_cells = 0
+    sample_printed = 0
+
+    # עובדים החל מ-EMP_START_ROW
+    for r in range(EMP_START_ROW, ws.max_row + 1):
+        if is_team_row(ws, r):
+            continue
+
+        name = ws.cell(r, NAME_COL).value
+        emp_id = ws.cell(r, ID_COL).value
+
+        if not name or not emp_id:
+            continue
+
+        name = str(name).strip()
+
+        # עובר רק על עמודות דינמיות שיש להן meta (תאריך+משמרת)
+        for col, (date_iso, shift) in col_meta.items():
+            cell = ws.cell(r, col)
+            scanned_cells += 1
+
+            if is_marked_as_done(cell):
+                marked_cells += 1
+
+                # key לפי המשמרת הרגילה (בוקר/ערב/לילה)
+                key = f"{date_iso}|{name}|{shift}"
+                if not payroll.get(key, {}).get("done"):
+                    payroll[key] = {"done": True, "updated_at": now, "by": by}
+                    updated += 1
+
+                # דיבאג: נדפיס כמה דוגמאות ראשונות כדי לוודא שאנחנו תופסים צבעים
+                if sample_printed < 8:
+                    dbg = cell_fill_debug(cell)
+                    print(f"[PAYROLL DEBUG] r={r} c={col} name={name} date={date_iso} shift={shift} fill={dbg}")
+                    sample_printed += 1
+
+    save_payroll_status(payroll)
+    log_action("upload payroll", [f"updated={updated}"])
+    update_state("upload payroll")
+
+    # דיבאג מסכם
+    print("PAYROLL DEBUG SUMMARY:",
+          "col_meta_cols=", len(col_meta),
+          "scanned_cells=", scanned_cells,
+          "marked_cells=", marked_cells,
+          "updated_new=", updated,
+          "TOTAL_PAYROLL_KEYS=", len(payroll))
+
+    return jsonify({
+        "ok": True,
+        "updated": updated,
+        "total_keys": len(payroll),
+        "scanned_cells": scanned_cells,
+        "marked_cells": marked_cells,
+        "meta_cols": len(col_meta),
+    })
+
+@app.route("/payroll-status", methods=["GET"])
+@login_required
+def payroll_status():
+    data = load_payroll_status()
+    return jsonify(data)
 
 if __name__ == "__main__":
     app.run(debug=True)
