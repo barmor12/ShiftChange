@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
@@ -6,527 +6,448 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
+/* ================== THEME VARIABLES ================== */
 :root{
+  --bg:#0b1220;
+  --panel:rgba(255,255,255,.08);
+  --border:rgba(255,255,255,.18);
+  --text:#f8fafc;
+  --muted:#cbd5e1;
+
+  --brand1:#60a5fa;
+  --brand2:#a78bfa;
+
+  --danger-bg:rgba(239,68,68,.22);
+  --danger-text:#fecaca;
+
+  --shadow:0 12px 35px rgba(0,0,0,.45);
+}
+
+/* 🌞 LIGHT MODE */
+html[data-theme="light"]{
   --bg:#f4f6fb;
-  --card:#ffffff;
-  --primary:#2563eb;
-  --primary-dark:#1e40af;
+  --panel:#ffffff;
   --border:#e5e7eb;
   --text:#0f172a;
   --muted:#64748b;
-  --accent:#fbbf24;
-  --ok:#16a34a;
-  --danger:#dc2626;
-  --gray:#6b7280;
+
+  --brand1:#2563eb;
+  --brand2:#4f46e5;
+
+  --danger-bg:#fee2e2;
+  --danger-text:#991b1b;
+
+  --shadow:0 10px 25px rgba(0,0,0,.08);
 }
 
+/* ================== BASE ================== */
 *{box-sizing:border-box}
+html,body{height:100%}
 
 body{
   margin:0;
-  font-family: "Segoe UI", Arial, sans-serif;
-  background:var(--bg);
+  font-family:"Segoe UI",Arial,sans-serif;
+  background:
+    radial-gradient(900px 500px at 10% 10%, rgba(96,165,250,.15), transparent 55%),
+    radial-gradient(800px 500px at 80% 10%, rgba(167,139,250,.12), transparent 60%),
+    var(--bg);
   color:var(--text);
 }
 
-header{
-  background:var(--card);
-  padding:20px 24px;
+button,input,select{font:inherit}
+a{color:inherit;text-decoration:none}
+
+/* ================== TOPBAR ================== */
+.topbar{
+  position:sticky;top:0;z-index:20;
+  backdrop-filter:blur(14px);
+  background:linear-gradient(180deg,#0b1220,#020617);
   border-bottom:1px solid var(--border);
 }
 
-header h1{
-  margin:0;
-  font-size:22px;
-  font-weight:700;
+html[data-theme="light"] .topbar{
+  background:linear-gradient(180deg,#ffffff,#f1f5f9);
 }
 
-.toolbar{
+.topbar-inner{
+  max-width:1400px;
+  margin:0 auto;
+  padding:14px 16px;
   display:flex;
-  flex-wrap:wrap;
-  gap:12px;
-  margin-top:14px;
-  align-items:center;
-}
-
-.toolbar .group{
-  display:flex;
-  gap:6px;
+  gap:14px;
   align-items:center;
   flex-wrap:wrap;
 }
 
-label{
-  font-size:13px;
-  color:var(--muted);
-}
-
-input, select{
-  padding:8px 10px;
+/* ================== BRAND ================== */
+.brand{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  padding:10px 14px;
+  border-radius:18px;
+  background:var(--panel);
   border:1px solid var(--border);
-  border-radius:8px;
-  font-size:14px;
-  background:#fff;
+  box-shadow:var(--shadow);
 }
-
-input:focus, select:focus{
-  outline:none;
-  border-color:var(--primary);
-  box-shadow:0 0 0 1px rgba(37,99,235,.2);
+.logo{
+  width:38px;
+  height:38px;
+  border-radius:12px;
+  background:linear-gradient(135deg,var(--brand1),var(--brand2));
 }
+.brand h1{margin:0;font-size:16px}
+.brand p{margin:0;font-size:12px;color:var(--muted)}
 
-button{
-  padding:10px 18px;
-  border:none;
-  border-radius:10px;
-  background:var(--primary);
-  color:white;
-  font-size:14px;
-  cursor:pointer;
-}
+.spacer{flex:1}
 
-button:hover{background:var(--primary-dark)}
-
-.note{
-  font-size:12px;
-  color:var(--muted);
-  margin-top:8px;
-}
-
-.badge{
+/* ================== NAV BUTTONS ================== */
+.navbtn{
   display:inline-flex;
   align-items:center;
-  gap:6px;
-  font-size:12px;
-  padding:6px 10px;
+  gap:8px;
+  padding:12px 18px;
   border-radius:999px;
   border:1px solid var(--border);
-  background:#fff;
-  color:var(--muted);
+  background:rgba(255,255,255,.06);
+  color:var(--text);
+  font-weight:600;
+  cursor:pointer;
+  transition:.2s ease;
 }
 
-.badge strong{color:var(--text)}
-
-.actions-right{
-  margin-inline-start:auto;
-  display:flex;
-  gap:8px;
-  flex-wrap:wrap;
-  align-items:center;
+.navbtn:hover{
+  background:rgba(255,255,255,.14);
+  transform:translateY(-1px);
 }
 
-.btn-gray{ background:var(--gray); }
-.btn-gray:hover{ background:#4b5563; }
-
-.btn-danger{ background:var(--danger); }
-.btn-danger:hover{ background:#b91c1c; }
-
-.btn-ok{ background:var(--ok); }
-.btn-ok:hover{ background:#15803d; }
-
-main{
-  padding:24px;
-  max-width:1400px;
-  margin:auto;
+.navbtn.active{
+  background:linear-gradient(135deg,var(--brand1),var(--brand2));
+  color:#0b1220;
+  border:none;
+  box-shadow:0 10px 25px rgba(96,165,250,.35);
 }
 
-.team{
-  background:var(--card);
+.navbtn.danger{
+  background:var(--danger-bg);
+  color:var(--danger-text);
+}
+
+/* ================== LAYOUT ================== */
+.shell{max-width:1400px;margin:0 auto;padding:18px 16px 40px}
+
+.panel{
+  margin-top:16px;
+  background:var(--panel);
   border:1px solid var(--border);
-  border-radius:14px;
-  margin-bottom:14px;
+  border-radius:22px;
+  box-shadow:var(--shadow);
   overflow:hidden;
 }
 
-.team-header{
-  padding:14px 18px;
-  background:linear-gradient(90deg,var(--primary),var(--primary-dark));
-  color:white;
+.panel-head{
+  padding:16px;
   display:flex;
-  justify-content:space-between;
-  align-items:center;
-  cursor:pointer;
-}
-
-.team-header span{
-  font-size:16px;
-  font-weight:600;
-}
-
-.team-header small{
-  opacity:.85;
-}
-
-.team-body{
-  display:none;
-  padding:12px;
-}
-
-table{
-  width:100%;
-  border-collapse:collapse;
-}
-
-th, td{
-  padding:10px;
+  gap:12px;
+  flex-wrap:wrap;
   border-bottom:1px solid var(--border);
-  font-size:14px;
 }
 
-th{
-  background:#f8fafc;
-  color:var(--muted);
-  font-weight:600;
-}
+/* ================== FORM ================== */
+.field{display:grid;gap:6px;min-width:220px}
+.field label{font-size:12px;color:var(--muted)}
 
-tr:hover td{
-  background:#f1f5f9;
-}
-
-td input, td select{
-  width:100%;
-  padding:7px 8px;
-  border-radius:8px;
-}
-
-.row-saved td{
-  background:rgba(22,163,74,.07);
-}
-
-
-.top-header{
-  background:var(--card);
-  border-bottom:1px solid var(--border);
-  padding:18px 24px;
-}
-
-.top-row{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:16px;
-}
-
-.top-row h1{
-  margin:0;
-  font-size:24px;
-  font-weight:700;
-}
-
-.last-update{
-  font-size:13px;
-  color:var(--muted);
-  background:#f8fafc;
-  padding:6px 12px;
-  border-radius:999px;
+.input,select,.noteInput{
+  height:42px;
+  padding:0 12px;
+  border-radius:14px;
   border:1px solid var(--border);
-}
-
-.last-update strong{
+  background:rgba(255,255,255,.10);
   color:var(--text);
 }
 
-.action-row{
-  display:flex;
-  justify-content:space-between;
-  align-items:flex-end;
-  gap:16px;
-  margin-top:18px;
-  flex-wrap:wrap;
-}
-
-.left-actions{
-  display:flex;
-  gap:14px;
-  align-items:flex-end;
-  flex-wrap:wrap;
-}
-
-.left-actions input{
-  min-width:220px;
-}
-
-.date-group{
-  display:flex;
-  align-items:center;
-  gap:6px;
-}
-
-.date-group label{
-  font-size:12px;
-}
-
-.right-actions{
+.actions{
   display:flex;
   gap:10px;
   align-items:center;
+  margin-inline-start:auto;
 }
 
-.btn-save{
-  background:var(--ok);
+/* ================== BUTTONS ================== */
+.btn{
+  height:42px;
+  padding:0 16px;
+  border-radius:14px;
+  border:none;
+  font-weight:700;
+  cursor:pointer;
+  background:linear-gradient(135deg,var(--brand1),var(--brand2));
+  color:#0b1220;
 }
-.btn-save:hover{ background:#15803d }
 
-.btn-export{
-  background:var(--primary);
+.btn.ok{
+  background:linear-gradient(135deg,#34d399,#22c55e);
 }
 
-.status-pill{
-  font-size:13px;
-  padding:6px 12px;
+.status{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:0 14px;
+  height:42px;
   border-radius:999px;
   border:1px solid var(--border);
-  background:#fff;
+  background:rgba(255,255,255,.08);
   color:var(--muted);
 }
 
-.nav-row{
+/* ================== TEAMS ================== */
+.content{padding:16px}
+
+.team{
+  margin-bottom:14px;
+  border-radius:18px;
+  border:1px solid var(--border);
+  background:rgba(255,255,255,.05);
+}
+
+.team-btn{
+  width:100%;
+  padding:16px;
   display:flex;
   justify-content:space-between;
-  align-items:center;
-  gap:12px;
-  margin-top:18px;
-  padding-top:14px;
-  border-top:1px dashed var(--border);
+  border:none;
+  background:linear-gradient(135deg,rgba(96,165,250,.25),rgba(167,139,250,.22));
+  color:var(--text);
+  cursor:pointer;
 }
 
-.nav-left, .nav-right{
+.team-body{display:none}
+.team.open .team-body{display:block}
+
+/* ================== TABLE ================== */
+table{width:100%;border-collapse:collapse}
+
+thead th{
+  padding:12px;
+  background:rgba(0,0,0,.25);
+  color:var(--muted);
+}
+
+tbody td{
+  padding:12px;
+  border-bottom:1px solid var(--border);
+}
+
+tbody tr:hover td{
+  background:rgba(255,255,255,.06);
+}
+
+/* ================== TOAST ================== */
+.toast{
+  position:fixed;
+  bottom:20px;
+  inset-inline:20px;
   display:flex;
-  gap:10px;
-  flex-wrap:wrap;
+  justify-content:center;
+  pointer-events:none;
 }
 
-.btn-nav{
-  background:#6b7280;
+.toast.show{
+  pointer-events:auto;
 }
-.btn-nav:hover{ background:#4b5563 }
 
-.btn-danger{
-  background:#dc2626;
-}
-.btn-danger:hover{ background:#b91c1c }
-
-.btn-logout{
-  background:#374151;
-}
-.btn-logout:hover{ background:#1f2937 }
-@media(max-width:900px){
-  th:nth-child(2), td:nth-child(2),
-  th:nth-child(3), td:nth-child(3){
-    display:none;
-  }
+.toast-content{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:14px 18px;
+  box-shadow:var(--shadow);
 }
 </style>
 </head>
 
 <body>
 
-<header class="top-header">
-
-  <!-- ROW 1: TITLE + STATUS -->
-  <div class="top-row">
-    <h1>מערכת השלמת שעות</h1>
-
-    {% if state and state.last_modified_by %}
-    <div class="last-update">
-      עודכן לאחרונה ע"י
-      <strong>{{ state.last_modified_by }}</strong>
-      <span>({{ state.last_modified_at }})</span>
-    </div>
-    {% endif %}
-  </div>
-
-  <!-- ROW 2: MAIN ACTIONS -->
-  <div class="action-row">
-
-    <div class="left-actions">
-      <input id="search" placeholder="🔍 חיפוש עובד…" onkeyup="filterEmployees()">
-
-      <div class="date-group">
-        <label>תאריך לעדכון</label>
-        <input type="date" id="workDate">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <h1>מערכת השלמת שעות</h1>
+          <p>ממשק ניהול מודרני · מהיר · רספונסיבי</p>
+        </div>
       </div>
 
-      <div class="date-group">
-        <label>מדוח</label>
-        <input type="date" id="reportFrom">
-        <span>–</span>
-        <input type="date" id="reportTo">
-      </div>
-    </div>
-
-    <div class="right-actions">
-      <button class="btn-save" onclick="saveAll()">💾 שמור הכל</button>
-      <button class="btn-export" onclick="exportExcel()">📤 ייצוא לאקסל</button>
-      <span class="status-pill" id="statusText">מוכן</span>
-    </div>
-
-  </div>
-
-  <!-- ROW 3: SYSTEM NAV -->
-  <div class="nav-row">
-
-    <div class="nav-left">
-      {% if role == "admin" %}
-        <button class="btn-nav" onclick="goUsers()">👥 משתמשים</button>
-        <button class="btn-nav" onclick="goAudit()">📜 Audit</button>
-        <button class="btn-danger" onclick="resetSystem()">♻ איפוס מערכת</button>
+      {% if state and state.last_modified_by %}
+        <span class="pill">
+          עודכן לאחרונה ע"י <strong>{{ state.last_modified_by }}</strong>
+          <span>({{ state.last_modified_at }})</span>
+        </span>
       {% endif %}
+
+      <div class="spacer"></div>
+
+      {% if role == "admin" %}
+        <button class="navbtn" onclick="goUsers()">👥 משתמשים</button>
+        <button class="navbtn" onclick="goAudit()">📜 Audit</button>
+        <button class="navbtn danger" onclick="resetSystem()">♻ איפוס</button>
+      {% endif %}
+      <button class="navbtn" id="themeBtn" onclick="toggleTheme()">🌙</button>
+
+      <button class="navbtn" onclick="logout()">🚪 התנתקות</button>
+    </div>
+  </div>
+
+  <div class="shell">
+
+    <!-- Controls Panel -->
+    <div class="panel">
+      <div class="panel-head">
+        <div class="field" style="min-width:260px;">
+          <label>חיפוש עובד</label>
+          <input id="search" class="input" placeholder="🔍 כתוב שם עובד…" onkeyup="filterEmployees()" />
+        </div>
+
+        <div class="field">
+          <label>תאריך לעדכון</label>
+          <input type="date" id="workDate" class="input" />
+        </div>
+
+        <div class="field" style="min-width:320px;">
+          <label>טווח דוח</label>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <input type="date" id="reportFrom" class="input" style="flex:1;" />
+            <span style="color:var(--muted);">–</span>
+            <input type="date" id="reportTo" class="input" style="flex:1;" />
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn ok" onclick="saveAll()">💾 שמור הכל</button>
+          <button class="btn" onclick="exportExcel()">📤 ייצוא לאקסל</button>
+          <div class="status" id="statusText">
+            <span class="dot" id="statusDot"></span>
+            <span id="statusMsg">מוכן</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        {% for team, members in teams.items() %}
+          <div class="team">
+            <button class="team-btn"  type="button">
+              <div class="team-title">
+                <strong>{{ team }}</strong>
+                <span>{{ members|length }} עובדים</span>
+              </div>
+              <div class="chev">⌄</div>
+            </button>
+
+            <div class="team-body">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width:28%">עובד</th>
+                    <th style="width:18%">משמרת</th>
+                    <th style="width:22%">סוג השלמה</th>
+                    <th>מלל חופשי</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for e in members %}
+                    <tr data-name="{{ e.name }}">
+                      <td data-label="עובד"><span class="cell-strong">{{ e.name }}</span></td>
+
+                      <td data-label="משמרת">
+                        <select class="select shift">
+                          {% for s in shifts %}
+                            <option value="{{ s }}">{{ s }}</option>
+                          {% endfor %}
+                        </select>
+                      </td>
+
+                      <td data-label="סוג השלמה">
+                        <select class="select action">
+                          {% for a in actions %}
+                            <option value="{{ a }}">{{ a }}</option>
+                          {% endfor %}
+                        </select>
+                      </td>
+
+                      <td data-label="מלל חופשי">
+                        <input class="noteInput" placeholder="הערה קצרה…" />
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
     </div>
 
-    <div class="nav-right">
-      <button class="btn-logout" onclick="logout()">🚪 התנתקות</button>
-    </div>
-
   </div>
 
-</header>
+  <!-- Toast -->
+  <div class="toast" id="toast">
 
-<main>
-
-{% for team, members in teams.items() %}
-<div class="team">
-  <div class="team-header" onclick="toggleTeam(this)">
-    <span>{{ team }}</span>
-    <small>{{ members|length }} עובדים</small>
   </div>
-
-  <div class="team-body">
-    <table>
-      <thead>
-        <tr>
-          <th style="width:28%">עובד</th>
-          <th style="width:18%">משמרת</th>
-          <th style="width:22%">סוג השלמה</th>
-          <th>מלל חופשי</th>
-        </tr>
-      </thead>
-      <tbody>
-      {% for e in members %}
-        <tr data-name="{{ e.name }}">
-          <td><strong>{{ e.name }}</strong></td>
-
-          <td>
-            <select class="shift">
-              {% for s in shifts %}
-              <option value="{{ s }}">{{ s }}</option>
-              {% endfor %}
-            </select>
-          </td>
-
-          <td>
-            <select class="action">
-              {% for a in actions %}
-              <option value="{{ a }}">{{ a }}</option>
-              {% endfor %}
-            </select>
-          </td>
-
-          <td>
-            <input class="noteInput" placeholder="מלל חופשי…">
-          </td>
-        </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
-{% endfor %}
-
-</main>
-
 <script>
-/* ---------------- ELEMENTS ---------------- */
+/* ================== ELEMENTS ================== */
 const workDate   = document.getElementById("workDate");
 const reportFrom = document.getElementById("reportFrom");
 const reportTo   = document.getElementById("reportTo");
-const statusText = document.getElementById("statusText");
 const search     = document.getElementById("search");
 
-/* ---------------- STATE ---------------- */
-// drafts[date][employeeName] = { name, shift, action, note }
+const statusDot  = document.getElementById("statusDot");
+const statusMsg  = document.getElementById("statusMsg");
+
+const toastEl    = document.getElementById("toast");
+const toastTitle = document.getElementById("toastTitle");
+const toastText  = document.getElementById("toastText");
+
+/* ================== STATE ================== */
+const LS_KEY = "hoursDrafts_v4";
 let drafts = {};
 let currentDate = null;
 
-const LS_KEY = "hoursDrafts_v1";
-
-/* ---------------- HELPERS ---------------- */
-function setStatus(msg){ statusText.textContent = msg; }
-
-function toggleTeam(header){
-  const body = header.nextElementSibling;
-  body.style.display = body.style.display === "block" ? "none" : "block";
-}
-function filterEmployees(){
-  const q = search.value.toLowerCase().trim();
-
-  document.querySelectorAll(".team").forEach(team=>{
-    const body = team.querySelector(".team-body");
-    let foundInTeam = false;
-
-    team.querySelectorAll("tr[data-name]").forEach(tr=>{
-      const match = tr.dataset.name.toLowerCase().includes(q);
-      tr.style.display = match || !q ? "" : "none";
-      if(match) foundInTeam = true;
-    });
-
-    // פותח צוות אם נמצא עובד בתוכו
-    if(foundInTeam && q){
-      body.style.display = "block";
-    }
-
-    // סוגר צוותים ריקים רק כשיש חיפוש
-    if(!foundInTeam && q){
-      body.style.display = "none";
-    }
-  });
-
-  // גלילה לעובד הראשון שנמצא
-  if(q){
-    const firstMatch = document.querySelector('tr[data-name]:not([style*="display: none"])');
-    if(firstMatch){
-      firstMatch.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-  }
+/* ================== HELPERS ================== */
+function setStatus(msg, type="idle"){
+  statusMsg.textContent = msg;
+  statusDot.className = "dot";
+  if(type==="ok") statusDot.classList.add("ok");
+  if(type==="warn") statusDot.classList.add("warn");
+  if(type==="bad") statusDot.classList.add("bad");
 }
 
-/* ---------------- NAV ---------------- */
-function logout(){
-  // GET /logout => redirect
-  window.location.href = "/logout";
+function showToast(title, text){
+  toastTitle.textContent = title;
+  toastText.textContent = text;
+  toastEl.classList.add("show");
+  clearTimeout(window.__t);
+  window.__t = setTimeout(()=>toastEl.classList.remove("show"), 2500);
 }
 
-function goAudit(){ window.location.href = "/audit"; }
-function goUsers(){ window.location.href = "/users"; }
-
-/* ---------------- LOCAL STORAGE ---------------- */
+/* ================== STORAGE ================== */
 function loadLocal(){
   try{
-    const raw = localStorage.getItem(LS_KEY);
-    drafts = raw ? JSON.parse(raw) : {};
-  }catch(e){
+    drafts = JSON.parse(localStorage.getItem(LS_KEY)) || {};
+  }catch{
     drafts = {};
   }
 }
 
-function saveLocal(){
+function saveLocalImmediate(){
   localStorage.setItem(LS_KEY, JSON.stringify(drafts));
 }
 
-function saveAll(){
-  saveLocal();
-
-  fetch("/touch", { method: "POST" })
-    .then(() => {
-      setStatus("נשמר ✔");
-     
-    });
-}
-
-/* ---------------- DRAFT SAVE/LOAD ---------------- */
+/* ================== DRAFT ================== */
 function saveDraftForRow(tr){
   if(!workDate.value){
-    setStatus("בחר תאריך לפני הזנה");
+    setStatus("בחר תאריך", "warn");
     return;
   }
 
@@ -536,107 +457,115 @@ function saveDraftForRow(tr){
   drafts[date] ||= {};
 
   drafts[date][tr.dataset.name] = {
+    date,
     name: tr.dataset.name,
     shift: tr.querySelector(".shift").value,
     action: tr.querySelector(".action").value,
     note: tr.querySelector(".noteInput").value
   };
 
-  saveLocal(); // ← קריטי
-
+  saveLocalImmediate(); // ✅ שמירה אמיתית
   tr.classList.add("row-saved");
-  setStatus("טיוטה נשמרה ✔");
+  setStatus("טיוטה נשמרה", "ok");
 }
 
+/* ================== EVENTS ================== */
+document.body.addEventListener("change", e=>{
+  if(!e.target.matches(".shift,.action")) return;
+  const tr = e.target.closest("tr[data-name]");
+  if(tr) saveDraftForRow(tr);
+});
+
+document.body.addEventListener("input", e=>{
+  if(!e.target.classList.contains("noteInput")) return;
+  const tr = e.target.closest("tr[data-name]");
+  if(tr) saveDraftForRow(tr);
+});
+
+/* ================== ACCORDION ================== */
+document.body.addEventListener("click", e=>{
+  const btn = e.target.closest(".team-btn");
+  if(!btn) return;
+  btn.closest(".team").classList.toggle("open");
+});
+
+/* ================== LOAD DATE ================== */
 function loadDateToUI(date){
   document.querySelectorAll("tr[data-name]").forEach(tr=>{
     const d = drafts?.[date]?.[tr.dataset.name];
-
     tr.querySelector(".shift").value = d?.shift || "";
     tr.querySelector(".action").value = d?.action || "";
     tr.querySelector(".noteInput").value = d?.note || "";
-
     tr.classList.toggle("row-saved", !!d);
   });
 }
 
-function ensureDateSelected(){
-  if(!workDate.value){
-    alert("יש לבחור תאריך לעדכון");
-    return false;
-  }
-  return true;
-}
-
-/* ---------------- EVENTS ---------------- */
-document.querySelectorAll("tr[data-name]").forEach(tr=>{
-  tr.querySelector(".shift").addEventListener("change", ()=>saveDraftForRow(tr));
-  tr.querySelector(".action").addEventListener("change", ()=>saveDraftForRow(tr));
-  tr.querySelector(".noteInput").addEventListener("input", ()=>saveDraftForRow(tr));
-});
-
 workDate.addEventListener("change", ()=>{
-  const date = workDate.value;
-  currentDate = date;
-  loadDateToUI(date);
-  setStatus("תאריך נטען");
+  currentDate = workDate.value;
+  loadDateToUI(currentDate);
 });
 
-/* ---------------- RESET (admin) ---------------- */
-function resetSystem(){
-  if(!confirm("⚠️ למחוק את כל נתוני המערכת ולהתחיל מחדש?")) return;
-
-  fetch("/reset", { method:"POST" })
-    .then(() => {
-      localStorage.removeItem(LS_KEY); // ← זה הקריטי
-      alert("המערכת אופסה בהצלחה");
-      location.reload();
+/* ================== SEARCH ================== */
+function filterEmployees(){
+  const q = search.value.toLowerCase().trim();
+  document.querySelectorAll(".team").forEach(team=>{
+    let found=false;
+    team.querySelectorAll("tr[data-name]").forEach(tr=>{
+      const ok = tr.dataset.name.toLowerCase().includes(q);
+      tr.style.display = (!q || ok) ? "" : "none";
+      if(ok) found=true;
     });
+    team.classList.toggle("open", q && found);
+  });
 }
 
-/* ---------------- EXPORT ---------------- */
+/* ================== SAVE ALL ================== */
+function saveAll(){
+  saveLocalImmediate();
+  fetch("/touch",{method:"POST"});
+  setStatus("נשמר", "ok");
+  showToast("נשמר", "כל הנתונים נשמרו");
+}
+
+/* ================== EXPORT ================== */
 function exportExcel(){
   if(!reportFrom.value || !reportTo.value){
-    alert("חובה לבחור טווח תאריכים לדוח");
+    showToast("שגיאה", "בחר טווח תאריכים");
     return;
   }
 
-  saveLocal();
+  saveLocalImmediate(); // 🔥 קריטי
 
-  const entries = [];
-  const from = reportFrom.value;
-  const to   = reportTo.value;
+  const rows = [];
 
   for(const [date, byName] of Object.entries(drafts)){
-    if(date < from || date > to) continue; // FIX: סינון טווח
+    if(date < reportFrom.value || date > reportTo.value) continue;
 
     for(const d of Object.values(byName)){
-      if(!d.shift) continue;              // FIX: בלי משמרת – לא מייצאים
-      if(!(d.action || d.note)) continue;
-
-      entries.push({
-        date,
-        name: d.name.trim(),               // FIX: ניקוי שם
-        shift: d.shift,
-        action: d.action,
-        note: d.note
-      });
+      if(d.shift && (d.action || d.note)){
+        rows.push({
+          date: d.date,
+          name: d.name,
+          shift: d.shift,
+          action: d.action,
+          note: d.note
+        });
+      }
     }
   }
 
-if(entries.length === 0){
-  alert("אין נתונים לייצוא בטווח התאריכים שנבחר");
-  setStatus("אין נתונים");
-  return;
-}
+  if(!rows.length){
+    showToast("אין נתונים", "לא נמצאו רשומות לייצוא");
+    return;
+  }
 
-  fetch("/export", {
+  fetch("/export",{
     method:"POST",
     headers:{ "Content-Type":"application/json" },
     body: JSON.stringify({
-      report_from: from,
-      report_to: to,
-      entries
+      report_from: reportFrom.value,
+      report_to: reportTo.value,
+      entries: rows
     })
   })
   .then(r=>r.blob())
@@ -645,22 +574,76 @@ if(entries.length === 0){
     a.href=URL.createObjectURL(b);
     a.download="hours_report.xlsx";
     a.click();
+    showToast("הצלחה", "הקובץ ירד");
   });
 }
 
-/* ---------------- INIT ---------------- */
-loadLocal();
-setStatus("מוכן");
-
-// אופציונלי: קבע תאריך ברירת מחדל להיום
-const today = new Date().toISOString().slice(0,10);
-if(!workDate.value){
-  workDate.value = today;
+/* ================== RESET ================== */
+function resetSystem(){
+  if(!confirm("לאפס את כל הנתונים?")) return;
+  fetch("/reset",{method:"POST"}).then(()=>{
+    localStorage.removeItem(LS_KEY);
+    location.reload();
+  });
 }
 
+/* ================== NAV ================== */
+function logout(){ location.href="/logout"; }
+function goUsers(){ location.href="/users"; }
+function goAudit(){ location.href="/audit"; }
+
+/* ================== INIT ================== */
+loadLocal();
+const today = new Date().toISOString().slice(0,10);
+workDate.value ||= today;
 currentDate = workDate.value;
 loadDateToUI(currentDate);
-</script>
+setStatus("מוכן","ok");
+/* ================== THEME ================== */
+const THEME_KEY = "ui_theme";
 
+function applyTheme(theme){
+  document.documentElement.setAttribute("data-theme", theme);
+  localStorage.setItem(THEME_KEY, theme);
+
+  const btn = document.getElementById("themeBtn");
+  if(btn){
+    btn.textContent = theme === "dark" ? "🌙" : "☀️";
+  }
+}
+
+function toggleTheme(){
+  const current =
+    document.documentElement.getAttribute("data-theme") || "dark";
+  applyTheme(current === "dark" ? "light" : "dark");
+}
+
+/* INIT THEME */
+(function(){
+  const saved = localStorage.getItem(THEME_KEY) || "dark";
+  applyTheme(saved);
+})();
+
+function applyTheme(theme){
+  document.documentElement.setAttribute("data-theme", theme);
+  localStorage.setItem(THEME_KEY, theme);
+
+  const btn = document.getElementById("themeBtn");
+  if(btn){
+    btn.textContent = theme === "dark" ? "🌙" : "☀️";
+  }
+}
+
+function toggleTheme(){
+  const current = document.documentElement.getAttribute("data-theme") || "dark";
+  applyTheme(current === "dark" ? "light" : "dark");
+}
+
+/* INIT */
+(function(){
+  const saved = localStorage.getItem(THEME_KEY) || "dark";
+  applyTheme(saved);
+})();
+</script>
 </body>
 </html>

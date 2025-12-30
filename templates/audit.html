@@ -1,62 +1,260 @@
 <!DOCTYPE html>
-<html lang="he" dir="rtl">
+<html lang="he" dir="rtl" data-theme="dark">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8" />
 <title>Audit Logs</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
 <style>
-body{font-family:Segoe UI,Arial; background:#f4f6fb; margin:0; color:#0f172a;}
-header{background:#fff; padding:18px 22px; border-bottom:1px solid #e5e7eb; display:flex; gap:10px; flex-wrap:wrap; align-items:center;}
-a,button{padding:10px 14px; border-radius:10px; border:none; cursor:pointer; text-decoration:none; color:#fff; background:#2563eb;}
-a.gray{background:#6b7280;}
-main{max-width:1200px; margin:20px auto; padding:0 16px;}
-table{width:100%; border-collapse:collapse; background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden;}
-th,td{padding:10px; border-bottom:1px solid #e5e7eb; font-size:14px; text-align:right;}
-th{background:#f8fafc; color:#64748b;}
-tr:hover td{background:#f1f5f9;}
-.badge{display:inline-flex; gap:6px; align-items:center; font-size:12px; padding:6px 10px; border:1px solid #e5e7eb; border-radius:999px; background:#fff; color:#64748b;}
-.badge strong{color:#0f172a;}
+:root{
+  --bg:#0b1220;
+  --panel:rgba(255,255,255,.06);
+  --border:rgba(255,255,255,.12);
+  --text:rgba(255,255,255,.92);
+  --muted:rgba(255,255,255,.65);
+
+  --brand1:#60a5fa;
+  --brand2:#a78bfa;
+
+  --radius:18px;
+  --shadow: 0 10px 30px rgba(0,0,0,.35);
+}
+
+/* 🌞 LIGHT MODE */
+html[data-theme="light"]{
+  --bg:#f4f6fb;
+  --panel:#ffffff;
+  --border:#e5e7eb;
+  --text:#0f172a;
+  --muted:#64748b;
+
+  --brand1:#2563eb;
+  --brand2:#4f46e5;
+
+  --shadow: 0 10px 25px rgba(0,0,0,.08);
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  font-family:"Segoe UI", Arial, sans-serif;
+  background:
+    radial-gradient(900px 500px at 10% 10%, rgba(96,165,250,.20), transparent 55%),
+    radial-gradient(800px 500px at 80% 10%, rgba(167,139,250,.18), transparent 60%),
+    var(--bg);
+  color:var(--text);
+}
+
+/* ===== TOPBAR ===== */
+.topbar{
+  position:sticky; top:0; z-index:20;
+  backdrop-filter: blur(12px);
+  background: linear-gradient(180deg, rgba(11,18,32,.75), rgba(11,18,32,.55));
+  border-bottom:1px solid var(--border);
+}
+.topbar-inner{
+  max-width:1200px;
+  margin:0 auto;
+  padding:14px 16px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.title{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 12px;
+  border:1px solid var(--border);
+  background: var(--panel);
+  border-radius:16px;
+  box-shadow: var(--shadow);
+}
+.logo{
+  width:36px; height:36px;
+  border-radius:12px;
+  background: linear-gradient(135deg, var(--brand1), var(--brand2));
+}
+.title h1{margin:0; font-size:16px;}
+.title p{margin:0; font-size:12px; color:var(--muted);}
+
+.spacer{flex:1}
+
+.navbtn{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:10px 12px;
+  border-radius:14px;
+  border:1px solid var(--border);
+  background: var(--panel);
+  color:var(--text);
+  cursor:pointer;
+  transition:.12s ease;
+}
+.navbtn:hover{
+  background: rgba(255,255,255,.12);
+  transform: translateY(-1px);
+}
+
+.pill{
+  display:inline-flex;
+  gap:8px;
+  padding:8px 12px;
+  border-radius:999px;
+  border:1px solid var(--border);
+  background: var(--panel);
+  font-size:12px;
+  color:var(--muted);
+}
+.pill strong{color:var(--text)}
+
+/* ===== CONTENT ===== */
+.shell{
+  max-width:1200px;
+  margin:0 auto;
+  padding:18px 16px 40px;
+}
+
+.card{
+  background: var(--panel);
+  border:1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow:hidden;
+}
+
+.card-head{
+  padding:14px 16px;
+  border-bottom:1px solid var(--border);
+}
+.card-head h2{margin:0; font-size:15px;}
+
+.table-wrap{
+  max-height:560px;
+  overflow:auto;
+}
+
+table{
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+}
+
+thead th{
+  position:sticky;
+  top:0;
+  background: var(--bg);
+  border-bottom:1px solid var(--border);
+  padding:12px;
+  font-size:12px;
+  color:var(--muted);
+  text-align:right;
+}
+
+tbody td{
+  padding:12px;
+  border-bottom:1px solid var(--border);
+  font-size:14px;
+}
+
+tbody tr:hover td{
+  background: rgba(255,255,255,.06);
+}
+
+.user{font-weight:800;}
+.action{color:var(--text);}
+.time{color:var(--muted); white-space:nowrap;}
+
+.empty{
+  text-align:center;
+  padding:18px;
+  color:var(--muted);
+}
 </style>
 </head>
+
 <body>
 
-<header>
-  <a class="gray" href="/">⬅ חזרה</a>
-  <a class="gray" href="/users">👥 משתמשים</a>
-  <a class="gray" href="/logout">🚪 התנתקות</a>
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="title">
+      <div class="logo"></div>
+      <div>
+        <h1>Audit Logs</h1>
+        <p>מעקב פעולות · מערכת Admin</p>
+      </div>
+    </div>
 
-  {% if state and state.last_modified_by %}
-    <span class="badge">
-      עודכן לאחרונה ע"י <strong>{{ state.last_modified_by }}</strong> | {{ state.last_modified_at }}
-    </span>
-  {% endif %}
-</header>
+    {% if state and state.last_modified_by %}
+      <span class="pill">
+        עודכן לאחרונה ע"י <strong>{{ state.last_modified_by }}</strong>
+        <span>({{ state.last_modified_at }})</span>
+      </span>
+    {% endif %}
 
-<main>
-  <h2 style="margin:10px 0 14px;">Audit Logs</h2>
+    <div class="spacer"></div>
 
-  <table>
-    <thead>
-      <tr>
-        <th style="width:190px;">תאריך</th>
-        <th style="width:200px;">משתמש</th>
-        <th>פעולה</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for row in logs %}
-      <tr>
-        <td>{{ row.ts }}</td>
-        <td><strong>{{ row.user }}</strong></td>
-        <td>{{ row.action }}</td>
-      </tr>
-      {% endfor %}
-      {% if logs|length == 0 %}
-      <tr><td colspan="3">אין לוגים עדיין</td></tr>
-      {% endif %}
-    </tbody>
-  </table>
-</main>
+    <button class="navbtn" onclick="toggleTheme()" id="themeBtn">🌙</button>
+    <button class="navbtn" onclick="location.href='/'">⬅ חזרה</button>
+    <button class="navbtn" onclick="location.href='/users'">👥 משתמשים</button>
+    <button class="navbtn" onclick="location.href='/logout'">🚪 התנתקות</button>
+  </div>
+</div>
+
+<div class="shell">
+  <div class="card">
+    <div class="card-head">
+      <h2>📜 יומן פעולות מערכת</h2>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:200px;">תאריך</th>
+            <th style="width:200px;">משתמש</th>
+            <th>פעולה</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in logs %}
+          <tr>
+            <td class="time">{{ row.ts }}</td>
+            <td class="user">{{ row.user }}</td>
+            <td class="action">{{ row.action }}</td>
+          </tr>
+          {% endfor %}
+          {% if logs|length == 0 %}
+          <tr>
+            <td colspan="3" class="empty">אין לוגים עדיין</td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const THEME_KEY = "ui_theme";
+
+function applyTheme(theme){
+  document.documentElement.setAttribute("data-theme", theme);
+  localStorage.setItem(THEME_KEY, theme);
+  document.getElementById("themeBtn").textContent =
+    theme === "dark" ? "🌙" : "☀️";
+}
+
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute("data-theme") || "dark";
+  applyTheme(cur === "dark" ? "light" : "dark");
+}
+
+applyTheme(localStorage.getItem(THEME_KEY) || "dark");
+</script>
 
 </body>
 </html>

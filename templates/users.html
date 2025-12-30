@@ -1,155 +1,296 @@
 <!DOCTYPE html>
-<html lang="he" dir="rtl">
+<html lang="he" dir="rtl" data-theme="dark">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8" />
 <title>ניהול משתמשים</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
 <style>
-body{font-family:Segoe UI,Arial; background:#f4f6fb; margin:0; color:#0f172a;}
-header{background:#fff; padding:18px 22px; border-bottom:1px solid #e5e7eb; display:flex; gap:10px; flex-wrap:wrap; align-items:center;}
-a{padding:10px 14px; border-radius:10px; text-decoration:none; color:#fff; background:#2563eb;}
-a.gray{background:#6b7280;}
-main{max-width:1100px; margin:20px auto; padding:0 16px;}
-.card{background:#fff; border:1px solid #e5e7eb; border-radius:14px; padding:16px; margin-bottom:14px;}
-input,select{padding:10px; border:1px solid #e5e7eb; border-radius:10px; width:100%; font-size:14px;}
-button{padding:10px 14px; border:none; border-radius:10px; cursor:pointer; background:#16a34a; color:#fff;}
-table{width:100%; border-collapse:collapse;}
-th,td{padding:10px; border-bottom:1px solid #e5e7eb; text-align:right;}
-th{background:#f8fafc; color:#64748b;}
-.row{display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:10px; align-items:end;}
-.err{color:#b91c1c; margin:8px 0 0;}
-.badge{display:inline-flex; gap:6px; align-items:center; font-size:12px; padding:6px 10px; border:1px solid #e5e7eb; border-radius:999px; background:#fff; color:#64748b;}
-.badge strong{color:#0f172a;}
-.modal{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.4);
+:root{
+  --bg:#0b1220;
+  --panel:rgba(255,255,255,.06);
+  --border:rgba(255,255,255,.12);
+  --text:rgba(255,255,255,.92);
+  --muted:rgba(255,255,255,.65);
+
+  --brand1:#60a5fa;
+  --brand2:#a78bfa;
+
+  --radius:18px;
+  --ring: 0 0 0 4px rgba(96,165,250,.18);
+  --shadow: 0 10px 30px rgba(0,0,0,.35);
+}
+
+/* 🌞 LIGHT MODE */
+html[data-theme="light"]{
+  --bg:#f4f6fb;
+  --panel:#ffffff;
+  --border:#e5e7eb;
+  --text:#0f172a;
+  --muted:#64748b;
+
+  --brand1:#2563eb;
+  --brand2:#4f46e5;
+
+  --shadow: 0 10px 25px rgba(0,0,0,.08);
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  font-family:"Segoe UI", Arial, sans-serif;
+  background:
+    radial-gradient(900px 500px at 10% 10%, rgba(96,165,250,.20), transparent 55%),
+    radial-gradient(800px 500px at 80% 10%, rgba(167,139,250,.18), transparent 60%),
+    var(--bg);
+  color:var(--text);
+}
+
+/* ===== TOPBAR ===== */
+.topbar{
+  position:sticky; top:0; z-index:20;
+  backdrop-filter: blur(12px);
+  background: linear-gradient(180deg, rgba(11,18,32,.75), rgba(11,18,32,.55));
+  border-bottom:1px solid var(--border);
+}
+.topbar-inner{
+  max-width:1200px;
+  margin:0 auto;
+  padding:14px 16px;
   display:flex;
   align-items:center;
-  justify-content:center;
-  z-index:50;
-}
-.modal.hidden{display:none;}
-.modal-box{
-  background:#fff;
-  padding:20px;
-  border-radius:14px;
-  width:360px;
-  display:grid;
   gap:10px;
 }
+
+.title{
+  display:flex; align-items:center; gap:10px;
+  padding:10px 12px;
+  border:1px solid var(--border);
+  background: var(--panel);
+  border-radius:16px;
+  box-shadow: var(--shadow);
+}
+.logo{
+  width:36px; height:36px;
+  border-radius:12px;
+  background: linear-gradient(135deg, var(--brand1), var(--brand2));
+}
+.title h1{margin:0; font-size:16px;}
+.title p{margin:0; font-size:12px; color:var(--muted);}
+
+.spacer{flex:1}
+
+.navbtn{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:10px 12px;
+  border-radius:14px;
+  border:1px solid var(--border);
+  background: var(--panel);
+  color:var(--text);
+  cursor:pointer;
+  transition:.12s ease;
+}
+.navbtn:hover{
+  background: rgba(255,255,255,.12);
+  transform: translateY(-1px);
+}
+
+.pill{
+  display:inline-flex; gap:8px;
+  padding:8px 12px;
+  border-radius:999px;
+  border:1px solid var(--border);
+  background: var(--panel);
+  font-size:12px;
+  color:var(--muted);
+}
+.pill strong{color:var(--text)}
+
+/* ===== CONTENT ===== */
+.shell{
+  max-width:1200px;
+  margin:0 auto;
+  padding:18px 16px 40px;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:16px;
+}
+
+.card{
+  background: var(--panel);
+  border:1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow:hidden;
+}
+
+.card-head{
+  padding:14px 16px;
+  border-bottom:1px solid var(--border);
+}
+.card-head h2{margin:0; font-size:15px;}
+
+.card-body{padding:14px;}
+
+.field{display:grid; gap:6px;}
+.field label{font-size:12px; color:var(--muted)}
+
+.input, select{
+  height:42px;
+  padding:0 12px;
+  border-radius:14px;
+  border:1px solid var(--border);
+  background: var(--panel);
+  color:var(--text);
+}
+.input:focus, select:focus{
+  outline:none;
+  box-shadow: var(--ring);
+}
+
+.row{
+  display:grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap:10px;
+}
+@media (max-width:680px){ .row{grid-template-columns:1fr;} }
+
+.btn{
+  height:42px;
+  padding:0 14px;
+  border:none;
+  border-radius:14px;
+  cursor:pointer;
+  font-weight:800;
+  background: linear-gradient(135deg, var(--brand1), var(--brand2));
+}
+.btn.ok{background: linear-gradient(135deg, #34d399, #22c55e);}
+.btn.gray{background: var(--panel); color:var(--text); border:1px solid var(--border);}
+.btn.danger{background: rgba(239,68,68,.18); border:1px solid rgba(239,68,68,.35);}
+
+table{width:100%; border-collapse:separate; border-spacing:0;}
+thead th{
+  font-size:12px;
+  color:var(--muted);
+  padding:12px;
+  border-bottom:1px solid var(--border);
+  text-align:right;
+}
+tbody td{
+  padding:12px;
+  border-bottom:1px solid var(--border);
+}
+tbody tr:hover td{background: rgba(255,255,255,.06);}
+
+.actions{display:flex; gap:8px; flex-wrap:wrap;}
 </style>
 </head>
+
 <body>
 
-<header>
-  <a class="gray" href="/">⬅ חזרה</a>
-  <a class="gray" href="/audit">📜 Audit</a>
-  <a class="gray" href="/logout">🚪 התנתקות</a>
-
-  {% if state and state.last_modified_by %}
-    <span class="badge">
-      עודכן לאחרונה ע"י <strong>{{ state.last_modified_by }}</strong> | {{ state.last_modified_at }}
-    </span>
-  {% endif %}
-</header>
-
-<main>
-  <div class="card">
-    <h2 style="margin:0 0 12px;">יצירת משתמש חדש</h2>
-
-    <form method="POST" action="/users/create" class="row">
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="title">
+      <div class="logo"></div>
       <div>
-        <label>שם משתמש</label>
-        <input name="username" placeholder="לדוגמה: mor" required>
+        <h1>ניהול משתמשים</h1>
+        <p>מסך Admin · הרשאות · עדכונים</p>
       </div>
-      <div>
-        <label>סיסמה</label>
-        <input
-          name="password"
-          type="password"
-          minlength="6"
-          placeholder="לפחות 6 תווים"
-          required
-        >
-      </div>
-      <div>
-        <label>תפקיד</label>
-        <select name="role">
-          <option value="user">user</option>
-          <option value="admin">admin</option>
-        </select>
-      </div>
-      <div>
-        <button type="submit">➕ הוסף</button>
-      </div>
-    </form>
-
-    {% if error %}
-      <div class="err">{{ error }}</div>
-    {% endif %}
-  </div>
-
-  <div class="card">
-    <h2 style="margin:0 0 12px;">רשימת משתמשים</h2>
-
-    <table>
-      <thead>
-        <tr>
-          <th style="width:260px;">שם משתמש</th>
-          <th style="width:180px;">תפקיד</th>
-          <th>הערה</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for uname, udata in users.items() %}
-        <tr>
-          <td><strong>{{ uname }}</strong></td>
-          <td>{{ udata.role }}</td>
-          <td>
-            <button onclick="openEdit('{{ uname }}','{{ udata.role }}')">✏️</button>
-            <button onclick="deleteUser('{{ uname }}')" style="background:#dc2626">❌</button>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</main>
-
-<div id="editModal" class="modal hidden">
-  <div class="modal-box">
-    <h3>עריכת משתמש</h3>
-
-    <label>שם משתמש</label>
-    <input id="editUser" disabled>
-
-    <label>סיסמה חדשה</label>
-    <input id="editPass" placeholder="השאר ריק אם לא לשנות">
-
-    <label>תפקיד</label>
-    <select id="editRole">
-      <option value="user">user</option>
-      <option value="admin">admin</option>
-    </select>
-
-    <div style="display:flex; gap:8px; justify-content:flex-end;">
-      <button onclick="closeEdit()" style="background:#6b7280">ביטול</button>
-      <button onclick="saveEdit()">💾 שמור</button>
     </div>
+
+    {% if state and state.last_modified_by %}
+      <span class="pill">
+        עודכן לאחרונה ע"י <strong>{{ state.last_modified_by }}</strong>
+        <span>({{ state.last_modified_at }})</span>
+      </span>
+    {% endif %}
+
+    <div class="spacer"></div>
+
+    <button class="navbtn" onclick="toggleTheme()" id="themeBtn">🌙</button>
+    <button class="navbtn" onclick="location.href='/'">⬅ חזרה</button>
+    <button class="navbtn" onclick="location.href='/audit'">📜 Audit</button>
+    <button class="navbtn" onclick="location.href='/logout'">🚪 התנתקות</button>
   </div>
 </div>
-</body>
-</html>
+
+<div class="shell">
+  <div class="grid">
+
+    <!-- CREATE USER -->
+    <div class="card">
+      <div class="card-head"><h2>➕ יצירת משתמש חדש</h2></div>
+      <div class="card-body">
+        <form method="POST" action="/users/create" class="row">
+          <input class="input" name="username" placeholder="שם משתמש" required />
+          <input class="input" name="password" type="password" placeholder="סיסמה (6+)" required />
+          <select name="role">
+            <option value="user">user</option>
+            <option value="admin">admin</option>
+          </select>
+          <button class="btn ok">הוסף</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- USERS LIST -->
+    <div class="card">
+      <div class="card-head"><h2>👥 רשימת משתמשים</h2></div>
+      <table>
+        <thead>
+          <tr>
+            <th>שם משתמש</th>
+            <th>תפקיד</th>
+            <th>פעולות</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for uname, udata in users.items() %}
+          <tr>
+            <td><strong>{{ uname }}</strong></td>
+            <td>{{ udata.role }}</td>
+            <td class="actions">
+              <button class="btn gray" onclick="openEdit('{{ uname }}','{{ udata.role }}')">✏️</button>
+              <button class="btn danger" onclick="deleteUser('{{ uname }}')">❌</button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
 
 <script>
+const THEME_KEY = "ui_theme";
+
+function applyTheme(theme){
+  document.documentElement.setAttribute("data-theme", theme);
+  localStorage.setItem(THEME_KEY, theme);
+  document.getElementById("themeBtn").textContent =
+    theme === "dark" ? "🌙" : "☀️";
+}
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute("data-theme") || "dark";
+  applyTheme(cur === "dark" ? "light" : "dark");
+}
+applyTheme(localStorage.getItem(THEME_KEY) || "dark");
 let currentUser = null;
 
 function openEdit(user, role){
   currentUser = user;
   document.getElementById("editUser").value = user;
   document.getElementById("editRole").value = role;
-  document.getElementById("editModal").style.display = "block";
+  document.getElementById("editPass").value = "";
+  document.getElementById("editModal").classList.remove("hidden");
+}
+function closeEdit(){
+  document.getElementById("editModal").classList.add("hidden");
 }
 
 async function saveEdit(){
@@ -166,20 +307,17 @@ async function saveEdit(){
   if(!res.ok) alert(data.error);
   else window.location.href = "/users";
 }
+
 async function deleteUser(username){
   if(username === "{{ user }}"){
     alert("לא ניתן למחוק את המשתמש שמחובר כעת");
     return;
   }
 
-  const warning = confirm(
-    "⚠️ מחיקת משתמש היא פעולה בלתי הפיכה.\n\nהאם אתה בטוח?"
-  );
+  const warning = confirm("⚠️ מחיקת משתמש היא פעולה בלתי הפיכה.\n\nהאם אתה בטוח?");
   if(!warning) return;
 
-const password = prompt(
-  "לאישור המחיקה – הזן את הסיסמה של המשתמש:\n" + username
-);
+  const password = prompt("לאישור המחיקה – הזן את הסיסמה של המשתמש:\n" + username);
   if(!password) return;
 
   const res = await fetch("/users/delete",{
@@ -189,10 +327,32 @@ const password = prompt(
   });
 
   const data = await res.json();
-  if(!res.ok){
-    alert(data.error);
-  } else {
-    window.location.href = "/users";
+  if(!res.ok) alert(data.error);
+  else window.location.href = "/users";
+}
+
+
+function applyTheme(theme){
+  document.documentElement.setAttribute("data-theme", theme);
+  localStorage.setItem(THEME_KEY, theme);
+
+  const btn = document.getElementById("themeBtn");
+  if(btn){
+    btn.textContent = theme === "dark" ? "🌙" : "☀️";
   }
 }
+
+function toggleTheme(){
+  const current = document.documentElement.getAttribute("data-theme") || "dark";
+  applyTheme(current === "dark" ? "light" : "dark");
+}
+
+/* INIT */
+(function(){
+  const saved = localStorage.getItem(THEME_KEY) || "dark";
+  applyTheme(saved);
+})();
 </script>
+
+</body>
+</html>
