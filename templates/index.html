@@ -359,6 +359,34 @@ html {
 *::after {
   box-shadow: none !important;
 }
+
+/* ===== LAST UPDATE PILL (FIXED) ===== */
+.last-update{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+
+  padding:8px 14px;
+  border-radius:999px;
+
+  background:rgba(255,255,255,.08);
+  border:1px solid var(--border);
+
+  font-size:13px;
+  font-weight:500;
+  color:var(--muted);
+
+  white-space:nowrap;
+}
+
+.last-update strong{
+  color:var(--text);
+  font-weight:600;
+}
+
+.last-update span{
+  opacity:.8;
+}
 </style>
 </head>
 
@@ -376,10 +404,10 @@ html {
       </div>
 
       {% if state and state.last_modified_by %}
-      <span class="pill" id="lastUpdate">
-        עודכן לאחרונה ע"י <strong>{{ state.last_modified_by }}</strong>
-        <span>({{ state.last_modified_at }})</span>
-      </span>
+        <div class="last-update" id="lastUpdate">
+          עודכן לאחרונה ע"י <strong>{{ state.last_modified_by }}</strong>
+          <span>({{ state.last_modified_at }})</span>
+        </div>
       {% endif %}
 
       <div class="spacer"></div>

@@ -141,3 +141,47 @@
 [30/12/2025 08:59:11] a | update entry | employee=יוליה ישראלוב | date=2025-12-30 | shift=לילה | value=ביטול משמרת
 [30/12/2025 08:59:11] a | update entry | employee=מתן טרבלסי | date=2025-12-30 | shift=בוקר | value=השלמת שעות
 [30/12/2025 08:59:11] a | export excel
+[30/12/2025 09:02:14] a | logout
+[30/12/2025 09:02:18] a | login
+[30/12/2025 09:02:32] a | update entry | employee=בר מור | date=2025-12-29 | shift=בוקר | value=קיצור משמרת
+[30/12/2025 09:02:32] a | update entry | employee=מאיר פדלון | date=2025-12-29 | shift=בוקר | value=קיצור משמרת
+[30/12/2025 09:02:32] a | update entry | employee=מיכאל אלפסי | date=2025-12-29 | shift=בוקר | value=קיצור משמרת
+[30/12/2025 09:02:32] a | update entry | employee=אורן אטיאס | date=2025-12-29 | shift=בוקר | value=השלמת שעות – אורןןן
+[30/12/2025 09:02:32] a | update entry | employee=מיכאל אלבז | date=2025-12-29 | shift=בוקר | value=השלמת שעות
+[30/12/2025 09:02:32] a | update entry | employee=בר מור | date=2025-12-30 | shift=ערב | value=מילואים
+[30/12/2025 09:02:32] a | update entry | employee=מיכאל אלפסי | date=2025-12-30 | shift=בוקר | value=ביטול משמרת
+[30/12/2025 09:02:32] a | update entry | employee=אופיר ספיר | date=2025-12-30 | shift=בוקר | value=ביטול משמרת
+[30/12/2025 09:02:32] a | update entry | employee=מאיר פדלון | date=2025-12-30 | shift=ערב | value=השלמת שעות
+[30/12/2025 09:02:32] a | update entry | employee=תום אדר | date=2025-12-30 | shift=לילה | value=מילואים
+[30/12/2025 09:02:32] a | update entry | employee=בר ליאור | date=2025-12-30 | shift=בוקר | value=השלמת שעות
+[30/12/2025 09:02:32] a | update entry | employee=רפאל קקון | date=2025-12-30 | shift=בוקר | value=השלמת שעות
+[30/12/2025 09:02:32] a | update entry | employee=שון רדצקי | date=2025-12-30 | shift=בוקר | value=ביטול משמרת
+[30/12/2025 09:02:32] a | update entry | employee=ילנה קפלן | date=2025-12-30 | shift=בוקר | value=השלמת שעות
+[30/12/2025 09:02:32] a | update entry | employee=ניסן שריקי | date=2025-12-30 | shift=בוקר | value=מילואים
+[30/12/2025 09:02:32] a | update entry | employee=דן שמואל | date=2025-12-30 | shift=ערב | value=קיצור משמרת
+[30/12/2025 09:02:32] a | update entry | employee=ירין כהן | date=2025-12-30 | shift=לילה | value=מילואים
+[30/12/2025 09:02:32] a | update entry | employee=יוליה ישראלוב | date=2025-12-30 | shift=לילה | value=ביטול משמרת
+[30/12/2025 09:02:32] a | update entry | employee=מתן טרבלסי | date=2025-12-30 | shift=בוקר | value=השלמת שעות
+[30/12/2025 09:02:32] a | export excel
+[30/12/2025 09:03:05] a | update entry | employee=בר מור | date=2025-12-29 | shift=בוקר | value=קיצור משמרת
+[30/12/2025 09:03:05] a | update entry | employee=מאיר פדלון | date=2025-12-29 | shift=בוקר | value=קיצור משמרת
+[30/12/2025 09:03:05] a | update entry | employee=מיכאל אלפסי | date=2025-12-29 | shift=בוקר | value=קיצור משמרת
+[30/12/2025 09:03:05] a | update entry | employee=אורן אטיאס | date=2025-12-29 | shift=בוקר | value=השלמת שעות – אורןןן
+[30/12/2025 09:03:05] a | update entry | employee=מיכאל אלבז | date=2025-12-29 | shift=בוקר | value=השלמת שעות
+[30/12/2025 09:03:05] a | update entry | employee=בר מור | date=2025-12-30 | shift=ערב | value=מילואים
+[30/12/2025 09:03:05] a | update entry | employee=מיכאל אלפסי | date=2025-12-30 | shift=בוקר | value=ביטול משמרת
+[30/12/2025 09:03:05] a | update entry | employee=אופיר ספיר | date=2025-12-30 | shift=בוקר | value=ביטול משמרת
+[30/12/2025 09:03:05] a | update entry | employee=מאיר פדלון | date=2025-12-30 | shift=ערב | value=השלמת שעות
+[30/12/2025 09:03:05] a | update entry | employee=תום אדר | date=2025-12-30 | shift=לילה | value=מילואים
+[30/12/2025 09:03:05] a | update entry | employee=בר ליאור | date=2025-12-30 | shift=בוקר | value=השלמת שעות
+[30/12/2025 09:03:05] a | update entry | employee=רפאל קקון | date=2025-12-30 | shift=בוקר | value=השלמת שעות
+[30/12/2025 09:03:05] a | update entry | employee=שון רדצקי | date=2025-12-30 | shift=בוקר | value=ביטול משמרת
+[30/12/2025 09:03:05] a | update entry | employee=ילנה קפלן | date=2025-12-30 | shift=בוקר | value=השלמת שעות
+[30/12/2025 09:03:05] a | update entry | employee=ניסן שריקי | date=2025-12-30 | shift=בוקר | value=מילואים
+[30/12/2025 09:03:05] a | update entry | employee=דן שמואל | date=2025-12-30 | shift=ערב | value=קיצור משמרת
+[30/12/2025 09:03:05] a | update entry | employee=ירין כהן | date=2025-12-30 | shift=לילה | value=מילואים
+[30/12/2025 09:03:05] a | update entry | employee=יוליה ישראלוב | date=2025-12-30 | shift=לילה | value=ביטול משמרת
+[30/12/2025 09:03:05] a | update entry | employee=מתן טרבלסי | date=2025-12-30 | shift=בוקר | value=השלמת שעות
+[30/12/2025 09:03:05] a | update entry | employee=מאיר פדלון | date=2025-12-21 | shift=בוקר | value=השלמת שעות
+[30/12/2025 09:03:05] a | update entry | employee=מאיר פדלון | date=2025-12-22 | shift=בוקר | value=קיצור משמרת
+[30/12/2025 09:03:05] a | export excel
