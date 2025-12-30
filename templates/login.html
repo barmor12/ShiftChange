@@ -1,112 +1,237 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>דף התחברות</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-        
-        .login-container {
-            background: white;
-            padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-            width: 100%;
-            max-width: 400px;
-        }
-        
-        h1 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 30px;
-            font-size: 28px;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #555;
-            font-weight: bold;
-        }
-        
-        input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-        
-        input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        
-        button {
-            width: 100%;
-            padding: 12px;
-            background: #667eea;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        
-        button:hover {
-            background: #764ba2;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>התחברות | מערכת השלמת שעות</title>
 
-        .error {
-            margin-top: 16px;
-            color: #d32f2f;
-            text-align: center;
-            font-weight: bold;
-        }
-    </style>
+<style>
+/* ================== THEME ================== */
+:root{
+  --bg:#0b1220;
+  --panel:rgba(255,255,255,.10);
+  --border:rgba(255,255,255,.18);
+  --text:#f8fafc;
+  --muted:#cbd5e1;
+
+  --brand1:#60a5fa;
+  --brand2:#a78bfa;
+
+  --danger-bg:rgba(239,68,68,.18);
+  --danger-text:#fecaca;
+
+  --shadow:0 20px 50px rgba(0,0,0,.45);
+}
+
+html[data-theme="light"]{
+  --bg:#f4f6fb;
+  --panel:#ffffff;
+  --border:#e5e7eb;
+  --text:#0f172a;
+  --muted:#64748b;
+
+  --brand1:#2563eb;
+  --brand2:#4f46e5;
+
+  --danger-bg:#fee2e2;
+  --danger-text:#991b1b;
+
+  --shadow:0 15px 35px rgba(0,0,0,.12);
+}
+
+/* ================== BASE ================== */
+*{box-sizing:border-box}
+html,body{height:100%}
+
+body{
+  margin:0;
+  font-family:"Segoe UI",Arial,sans-serif;
+  background:
+    radial-gradient(900px 500px at 10% 10%, rgba(96,165,250,.18), transparent 55%),
+    radial-gradient(800px 500px at 80% 10%, rgba(167,139,250,.16), transparent 60%),
+    var(--bg);
+  color:var(--text);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
+
+/* ================== CARD ================== */
+.login-card{
+  width:100%;
+  max-width:420px;
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:26px;
+  box-shadow:var(--shadow);
+  padding:34px 32px 30px;
+  backdrop-filter:blur(14px);
+}
+
+/* ================== HEADER ================== */
+.header{
+  text-align:center;
+  margin-bottom:26px;
+}
+
+.logo{
+  width:52px;
+  height:52px;
+  margin:0 auto 12px;
+  border-radius:16px;
+  background:linear-gradient(135deg,var(--brand1),var(--brand2));
+}
+
+.header h1{
+  margin:0;
+  font-size:22px;
+  font-weight:800;
+}
+
+.header p{
+  margin-top:6px;
+  font-size:13px;
+  color:var(--muted);
+}
+
+/* ================== FORM ================== */
+.form-group{
+  margin-bottom:18px;
+}
+
+label{
+  display:block;
+  font-size:13px;
+  margin-bottom:6px;
+  color:var(--muted);
+}
+
+input{
+  width:100%;
+  height:44px;
+  padding:0 14px;
+  border-radius:14px;
+  border:1px solid var(--border);
+  background:rgba(255,255,255,.10);
+  color:var(--text);
+  font-size:15px;
+}
+
+input::placeholder{
+  color:rgba(255,255,255,.5);
+}
+
+html[data-theme="light"] input::placeholder{
+  color:#94a3b8;
+}
+
+input:focus{
+  outline:none;
+  border-color:var(--brand1);
+  box-shadow:0 0 0 3px rgba(96,165,250,.25);
+}
+
+/* ================== BUTTON ================== */
+button{
+  width:100%;
+  height:46px;
+  border-radius:999px;
+  border:none;
+  font-size:16px;
+  font-weight:800;
+  cursor:pointer;
+  background:linear-gradient(135deg,var(--brand1),var(--brand2));
+  color:#0b1220;
+  transition:.2s ease;
+}
+
+button:hover{
+  transform:translateY(-1px);
+  box-shadow:0 10px 25px rgba(96,165,250,.35);
+}
+
+/* ================== ERROR ================== */
+.error{
+  margin-top:16px;
+  padding:12px 14px;
+  border-radius:14px;
+  background:var(--danger-bg);
+  color:var(--danger-text);
+  font-size:14px;
+  font-weight:700;
+  text-align:center;
+}
+
+/* ================== THEME TOGGLE ================== */
+.theme-toggle{
+  margin-top:18px;
+  text-align:center;
+}
+
+.theme-toggle button{
+  background:none;
+  border:none;
+  color:var(--muted);
+  font-size:14px;
+  cursor:pointer;
+}
+
+.theme-toggle button:hover{
+  color:var(--text);
+}
+</style>
 </head>
+
 <body>
-    <div class="login-container">
-        <h1>התחברות למערכת</h1>
 
-        <form method="POST" action="/login">
-            <div class="form-group">
-                <label for="username">שם משתמש:</label>
-                <input type="text" id="username" name="username" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="password">סיסמה:</label>
-                <input type="password" id="password" name="password" required>
-            </div>
-            
-            <button type="submit">התחברות</button>
-        </form>
+<div class="login-card">
 
-        {% if error %}
-        <div class="error">{{ error }}</div>
-        {% endif %}
+  <div class="header">
+    <div class="logo"></div>
+    <h1>התחברות למערכת</h1>
+    <p>מערכת השלמת שעות · ממשק ניהול</p>
+  </div>
+
+  <form method="POST" action="/login">
+    <div class="form-group">
+      <label for="username">שם משתמש</label>
+      <input type="text" id="username" name="username" placeholder="הכנס שם משתמש" required>
     </div>
+
+    <div class="form-group">
+      <label for="password">סיסמה</label>
+      <input type="password" id="password" name="password" placeholder="הכנס סיסמה" required>
+    </div>
+
+    <button type="submit">התחברות</button>
+  </form>
+
+  {% if error %}
+    <div class="error">{{ error }}</div>
+  {% endif %}
+
+  <div class="theme-toggle">
+    <button type="button" onclick="toggleTheme()">🌙 / ☀️ החלפת מצב תצוגה</button>
+  </div>
+
+</div>
+
+<script>
+const THEME_KEY="ui_theme";
+
+function applyTheme(t){
+  document.documentElement.setAttribute("data-theme",t);
+  localStorage.setItem(THEME_KEY,t);
+}
+
+function toggleTheme(){
+  const cur=document.documentElement.getAttribute("data-theme")==="light"?"dark":"light";
+  applyTheme(cur);
+}
+
+applyTheme(localStorage.getItem(THEME_KEY)||"dark");
+</script>
+
 </body>
 </html>
