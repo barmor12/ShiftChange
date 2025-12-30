@@ -11,6 +11,7 @@ import os
 import json
 import time
 from functools import wraps
+from datetime import datetime
 
 # ================= CONFIG =================
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -547,11 +548,20 @@ def reset():
     update_state("reset system")   # ← זה מה שחסר
     return jsonify({"ok": True})
 
-@app.post("/touch")
-@login_required
+@app.route("/touch", methods=["POST"])
 def touch():
-    log_action("save all")
-    return jsonify({"ok": True})
+    user = session.get("user", "לא ידוע")
+    now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+
+    state = {
+        "last_modified_by": user,
+        "last_modified_at": now
+    }
+
+    with open(STATE_FILE, "w", encoding="utf-8") as f:
+        json.dump(state, f, ensure_ascii=False, indent=2)
+
+    return jsonify(state)
 
 @app.post("/export")
 @login_required
