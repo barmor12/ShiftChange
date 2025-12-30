@@ -21,7 +21,15 @@
   --danger-text:#fecaca;
 
   --shadow:0 12px 35px rgba(0,0,0,.45);
+  /* ===== SELECT COLORS ===== */
+--select-bg: #374151;
+--select-text: #f8fafc;
+--select-option-bg: #111827;
+--select-option-text: #f8fafc;
+--select-option-hover: #1f2937;
 }
+
+
 
 /* 🌞 LIGHT MODE */
 html[data-theme="light"]{
@@ -38,6 +46,12 @@ html[data-theme="light"]{
   --danger-text:#991b1b;
 
   --shadow:0 10px 25px rgba(0,0,0,.08);
+    /* ===== SELECT COLORS ===== */
+  --select-bg: #ffffff;
+  --select-text: #0f172a;
+  --select-option-bg: #ffffff;
+  --select-option-text: #0f172a;
+  --select-option-hover: #e5e7eb;
 }
 
 /* ================== BASE ================== */
@@ -164,8 +178,23 @@ html[data-theme="light"] .topbar{
   border:1px solid var(--border);
   background:rgba(255,255,255,.10);
   color:var(--text);
+  select{
+  background: var(--select-bg);
+  color: var(--select-text);
+}
 }
 
+/* ===== SELECT OPTIONS FIX ===== */
+select option{
+  background: var(--select-option-bg);
+  color: var(--select-option-text);
+}
+
+select option:hover,
+select option:checked{
+  background: var(--select-option-hover);
+  color: var(--select-option-text);
+}
 .actions{
   display:flex;
   gap:10px;
