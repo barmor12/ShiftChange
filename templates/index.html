@@ -399,7 +399,7 @@ html {
         <div class="logo"></div>
         <div>
           <h1>מערכת השלמת שעות</h1>
-          <p>ממשק ניהול מודרני · מהיר · רספונסיבי</p>
+          <p>ממשק ניהול ארגוני</p>
         </div>
       </div>
 
@@ -413,11 +413,11 @@ html {
       <div class="spacer"></div>
 
       {% if role == "admin" %}
+      <button class="navbtn" id="themeBtn" onclick="toggleTheme()">🌙</button>
         <button class="navbtn" onclick="goUsers()">👥 משתמשים</button>
         <button class="navbtn" onclick="goAudit()">📜 Audit</button>
         <button class="navbtn danger" onclick="resetSystem()">♻ איפוס</button>
       {% endif %}
-      <button class="navbtn" id="themeBtn" onclick="toggleTheme()">🌙</button>
 
       <button class="navbtn" onclick="logout()">🚪 התנתקות</button>
     </div>
@@ -652,27 +652,49 @@ function filterEmployees(){
 function saveAll(){
   saveLocalImmediate();
 
-  fetch("/touch", { method: "POST" })
-    .then(r => {
-      if(!r.ok) throw new Error("touch failed");
-      return r.json();
-    })
-    .then(state => {
-      setStatus("נשמר", "ok");
-      showToast("נשמר", "כל הנתונים נשמרו");
+  const entries = [];
 
-      const el = document.getElementById("lastUpdate");
-      if(el){
-        el.innerHTML = `
-          עודכן לאחרונה ע"י <strong>${state.last_modified_by}</strong>
-          <span>(${state.last_modified_at})</span>
-        `;
+  for(const byName of Object.values(drafts)){
+    for(const d of Object.values(byName)){
+      if(d.shift && (d.action || d.note)){
+        entries.push({
+          date: d.date,
+          name: d.name,
+          shift: d.shift,
+          action: d.action,
+          note: d.note
+        });
       }
-    })
-    .catch(() => {
-      setStatus("שגיאה", "bad");
-      showToast("שגיאה", "העדכון נכשל");
-    });
+    }
+  }
+
+  fetch("/touch", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ entries })
+  })
+  .then(r => {
+    if(!r.ok) throw new Error("touch failed");
+    return r.json();
+  })
+  .then(state => {
+    setStatus("נשמר", "ok");
+    showToast("נשמר", "כל הנתונים נשמרו");
+
+    const el = document.getElementById("lastUpdate");
+    if(el){
+      el.innerHTML = `
+        עודכן לאחרונה ע"י <strong>${state.last_modified_by}</strong>
+        <span>(${state.last_modified_at})</span>
+      `;
+    }
+  })
+  .catch(() => {
+    setStatus("שגיאה", "bad");
+    showToast("שגיאה", "העדכון נכשל");
+  });
 }
 
 /* ================== EXPORT ================== */

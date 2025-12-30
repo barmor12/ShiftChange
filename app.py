@@ -548,20 +548,37 @@ def reset():
     update_state("reset system")   # ← זה מה שחסר
     return jsonify({"ok": True})
 
-@app.route("/touch", methods=["POST"])
+@app.post("/touch")
+@login_required
 def touch():
-    user = session.get("user", "לא ידוע")
+    data = request.json or {}
+    entries = data.get("entries", [])
+
+    user = session.get("user")
     now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
+    # update state
     state = {
         "last_modified_by": user,
         "last_modified_at": now
     }
-
     with open(STATE_FILE, "w", encoding="utf-8") as f:
         json.dump(state, f, ensure_ascii=False, indent=2)
 
+    # ✅ AUDIT – רק כאן
+    for e in entries:
+        log_action(
+            "update entry",
+            [
+                f"employee={e.get('name')}",
+                f"date={e.get('date')}",
+                f"shift={e.get('shift')}",
+                f"value={e.get('action')} {e.get('note') or ''}"
+            ]
+        )
+
     return jsonify(state)
+
 
 @app.post("/export")
 @login_required
@@ -628,16 +645,8 @@ def export():
         if note:
             text = f"{action} – {note}" if action else note
 
-        # ✅ AUDIT DETAILS: who changed what (per entry written to the report)
-        log_action(
-            "update entry",
-            details=[
-                f"employee={name}",
-                f"date={e.get('date')}",
-                f"shift={shift}",
-                f"value={text}"
-            ]
-        )
+        
+
 
         cell = ws.cell(emp_row[name], col)
         cell.value = text
