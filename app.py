@@ -116,7 +116,22 @@ ACTIONS = [
     "חופש",
 ]
 
+PAYROLL_META_PATH = os.path.join(APP_DIR, "data", "payroll_meta.json")
+
 # ================= HELPERS =================
+
+def load_payroll_meta():
+    if not os.path.exists(PAYROLL_META_PATH):
+        return {}
+    with open(PAYROLL_META_PATH, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+def save_payroll_meta(data):
+    os.makedirs(os.path.dirname(PAYROLL_META_PATH), exist_ok=True)
+    with open(PAYROLL_META_PATH, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+
 def log_action(action, details=None):
     ts = dt.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     user = session.get("user", "anonymous")
@@ -932,22 +947,7 @@ def upload_payroll():
                 }
                 updated += 1
 
-                # 🔥 ניקוי חריגה אם תוקן באקסל
 
-                if key in touch_log:
-                    touched_at = touch_log[key].get("touched_at")
-                    payroll_at = payroll.get(key, {}).get("updated_at")
-
-                    if touched_at and payroll_at:
-                        try:
-                            t_touch = dt.datetime.fromisoformat(touched_at)
-                            t_pay   = dt.datetime.fromisoformat(payroll_at)
-
-                            # רק אם השכר יותר חדש מהשינוי – מנקים
-                            if t_pay >= t_touch:
-                                del touch_log[key]
-                        except Exception:
-                            pass
                 # דיבאג: נדפיס כמה דוגמאות ראשונות כדי לוודא שאנחנו תופסים צבעים
                 if sample_printed < 8:
                     dbg = cell_fill_debug(cell)
@@ -959,7 +959,12 @@ def upload_payroll():
 
     log_action("upload payroll", [f"updated={updated}"])
     update_state("upload payroll")
-
+    
+        # ✅ אישור שכר גלובלי – זה מקור האמת
+    save_payroll_meta({
+        "last_upload_at": now,
+        "by": by
+    })
     # דיבאג מסכם
     print("PAYROLL DEBUG SUMMARY:",
           "col_meta_cols=", len(col_meta),
@@ -987,20 +992,32 @@ def payroll_status():
 @app.get("/payroll-dirty")
 @login_required
 def payroll_dirty():
-    payroll = load_payroll_status()
     touch_log = load_touch_log()
+    payroll_meta = load_payroll_meta()
+
+    last_payroll_at = payroll_meta.get("last_upload_at")
+    if not last_payroll_at:
+        return jsonify({})
+
+    try:
+        t_payroll = dt.datetime.fromisoformat(last_payroll_at)
+    except Exception:
+        return jsonify({})
 
     dirty = {}
 
     for key, t in touch_log.items():
-        if key not in payroll:
-            continue  # לא דווח לשכר → לא רלוונטי
+        try:
+            t_touch = dt.datetime.fromisoformat(t.get("touched_at"))
+        except Exception:
+            continue
 
-        dirty[key] = {
-            "payroll_at": payroll[key]["updated_at"],
-            "touched_at": t["touched_at"],
-            "by": t["by"]
-        }
+        # 🔴 שינוי אחרי אישור שכר
+        if t_touch > t_payroll:
+            dirty[key] = {
+                "touched_at": t["touched_at"],
+                "by": t["by"]
+            }
 
     return jsonify(dirty)
 if __name__ == "__main__":
