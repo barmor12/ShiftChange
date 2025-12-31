@@ -881,6 +881,7 @@ def upload_payroll():
     col_meta = build_col_meta_from_export(ws)
 
     payroll = load_payroll_status()
+    touch_log = load_touch_log()
     now = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     by = session.get("user", "admin")
 
@@ -909,17 +910,8 @@ def upload_payroll():
 
             dbg = cell_fill_debug(cell)
 
-            print(
-                f"[PAYROLL SCAN] r={r} c={col} name={name} "
-                f"date={date_iso} shift={shift} fill={dbg}"
-            )
-
             if is_payroll_done_cell(cell):
                 key = f"{date_iso}|{name}|{shift}"
-
-                # ⛔ אם כבר טופל – לא נוגעים
-                if payroll.get(key, {}).get("done"):
-                    continue
 
                 payroll[key] = {
                     "done": True,
@@ -928,6 +920,9 @@ def upload_payroll():
                 }
                 updated += 1
 
+                # 🔥 ניקוי חריגה אם תוקן באקסל
+                if key in touch_log:
+                    del touch_log[key]
                 # דיבאג: נדפיס כמה דוגמאות ראשונות כדי לוודא שאנחנו תופסים צבעים
                 if sample_printed < 8:
                     dbg = cell_fill_debug(cell)
@@ -935,6 +930,8 @@ def upload_payroll():
                     sample_printed += 1
 
     save_payroll_status(payroll)
+    save_touch_log(touch_log)
+
     log_action("upload payroll", [f"updated={updated}"])
     update_state("upload payroll")
 
@@ -970,18 +967,34 @@ def payroll_dirty():
 
     dirty = {}
 
+    # index payroll by (date|name)
+    payroll_index = {}
     for key, p in payroll.items():
-        t = touch_log.get(key)
-        if not t:
+        date, name, _ = key.split("|", 2)
+        payroll_index.setdefault((date, name), []).append(p)
+
+    for key, t in touch_log.items():
+        parts = key.split("|")
+        if len(parts) < 2:
             continue
 
-        # 🔥 בדיקה נקייה: אותו key בלבד
-        if t["touched_at"] > p["updated_at"]:
-            dirty[key] = {
-                "payroll_at": p["updated_at"],
-                "touched_at": t["touched_at"],
-                "by": t["by"]
-            }
+        date = parts[0]
+        name = parts[1]
+        shift = parts[2] if len(parts) > 2 else ""
+
+        plist = payroll_index.get((date, name))
+        if not plist:
+            continue
+
+        # אם יש לפחות דיווח שכר אחד לפני השינוי → dirty
+        for p in plist:
+            if t["touched_at"] > p["updated_at"]:
+                dirty[key] = {
+                    "payroll_at": p["updated_at"],
+                    "touched_at": t["touched_at"],
+                    "by": t["by"]
+                }
+                break
 
     return jsonify(dirty)
 

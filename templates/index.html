@@ -685,16 +685,15 @@ function refreshPayrollDots(){
 
     dot.classList.remove("done", "bad");
 
-    const shift = tr.querySelector(".shift")?.value || "";
-    if(!shift){
-      dot.title = "אין משמרת";
-      return;
-    }
+    const prefix = `${currentDate}|${name}|`;
 
-    const key = `${currentDate}|${name}|${shift}`;
+    const done = Object.keys(payrollStatus || {}).some(
+      k => k.startsWith(prefix) && payrollStatus[k]?.done === true
+    );
 
-    const done  = payrollStatus?.[key]?.done === true;
-    const dirty = payrollDirty?.[key] !== undefined;
+    const dirty = Object.keys(payrollDirty || {}).some(
+      k => k.startsWith(prefix)
+    );
 
     if(dirty){
       dot.classList.add("bad");
