@@ -559,7 +559,6 @@ def reset():
 
     update_state("reset system")
     return jsonify({"ok": True})
-
 @app.post("/touch")
 @login_required
 def touch():
@@ -569,7 +568,6 @@ def touch():
     user = session.get("user")
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    # עדכון state
     state = {
         "last_modified_by": user,
         "last_modified_at": now
@@ -578,17 +576,32 @@ def touch():
         json.dump(state, f, ensure_ascii=False, indent=2)
 
     touch_log = load_touch_log()
+    payroll_status = load_payroll_status()
 
     for e in entries:
-        date = e.get("date")
-        name = e.get("name")
+        date  = e.get("date")
+        name  = e.get("name")
         shift = e.get("shift") or ""
+        action = (e.get("action") or "").strip()
+        note   = (e.get("note") or "").strip()
+
         key = f"{date}|{name}|{shift}"
 
-        # 🔥 דריסה מלאה – אין היסטוריה
+        # 
+
+        prev = touch_log.get(key)
+
+        new_value = f"{action}|{note}"
+
+        # ❌ אם הערך זהה למה שכבר נשמר → לא שינוי
+        if prev and prev.get("value") == new_value:
+            continue
+
+        # ✅ שינוי אמיתי
         touch_log[key] = {
             "touched_at": now,
-            "by": user
+            "by": user,
+            "value": new_value
         }
 
         log_action(
@@ -596,14 +609,13 @@ def touch():
             [
                 f"employee={name}",
                 f"date={date}",
-                f"shift={e.get('shift')}",
-                f"value={e.get('action')} {e.get('note') or ''}"
+                f"shift={shift}",
+                f"value={new_value}"
             ]
         )
 
     save_touch_log(touch_log)
     return jsonify(state)
-
 
 @app.post("/export")
 @login_required
@@ -921,8 +933,21 @@ def upload_payroll():
                 updated += 1
 
                 # 🔥 ניקוי חריגה אם תוקן באקסל
+
                 if key in touch_log:
-                    del touch_log[key]
+                    touched_at = touch_log[key].get("touched_at")
+                    payroll_at = payroll.get(key, {}).get("updated_at")
+
+                    if touched_at and payroll_at:
+                        try:
+                            t_touch = dt.datetime.fromisoformat(touched_at)
+                            t_pay   = dt.datetime.fromisoformat(payroll_at)
+
+                            # רק אם השכר יותר חדש מהשינוי – מנקים
+                            if t_pay >= t_touch:
+                                del touch_log[key]
+                        except Exception:
+                            pass
                 # דיבאג: נדפיס כמה דוגמאות ראשונות כדי לוודא שאנחנו תופסים צבעים
                 if sample_printed < 8:
                     dbg = cell_fill_debug(cell)
@@ -967,36 +992,16 @@ def payroll_dirty():
 
     dirty = {}
 
-    # index payroll by (date|name)
-    payroll_index = {}
-    for key, p in payroll.items():
-        date, name, _ = key.split("|", 2)
-        payroll_index.setdefault((date, name), []).append(p)
-
     for key, t in touch_log.items():
-        parts = key.split("|")
-        if len(parts) < 2:
-            continue
+        if key not in payroll:
+            continue  # לא דווח לשכר → לא רלוונטי
 
-        date = parts[0]
-        name = parts[1]
-        shift = parts[2] if len(parts) > 2 else ""
-
-        plist = payroll_index.get((date, name))
-        if not plist:
-            continue
-
-        # אם יש לפחות דיווח שכר אחד לפני השינוי → dirty
-        for p in plist:
-            if t["touched_at"] > p["updated_at"]:
-                dirty[key] = {
-                    "payroll_at": p["updated_at"],
-                    "touched_at": t["touched_at"],
-                    "by": t["by"]
-                }
-                break
+        dirty[key] = {
+            "payroll_at": payroll[key]["updated_at"],
+            "touched_at": t["touched_at"],
+            "by": t["by"]
+        }
 
     return jsonify(dirty)
-
 if __name__ == "__main__":
     app.run(debug=True)

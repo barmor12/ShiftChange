@@ -596,6 +596,7 @@ let drafts = {};
 let currentDate = null;
 let payrollStatus = {};
 let payrollDirty = {};
+let lastSaved = {};
 
 /* ================== HELPERS ================== */
 function setStatus(msg, type="idle"){
@@ -652,9 +653,9 @@ function showDirtyOnly(){
       }
 
       const name = tr.dataset.name;
-      const shift = tr.querySelector(".shift")?.value || "";
-      const key = `${currentDate}|${name}|${shift}`;
-      const isDirty = !!payrollDirty[key];
+      const prefix = `${currentDate}|${name}|`;
+      const isDirty = Object.keys(payrollDirty || {})
+        .some(k => k.startsWith(prefix));
 
       tr.style.display = isDirty ? "" : "none";
 
@@ -687,18 +688,16 @@ function refreshPayrollDots(){
 
     const prefix = `${currentDate}|${name}|`;
 
-    const done = Object.keys(payrollStatus || {}).some(
-      k => k.startsWith(prefix) && payrollStatus[k]?.done === true
-    );
+    const hasDirty = Object.keys(payrollDirty || {})
+      .some(k => k.startsWith(prefix));
 
-    const dirty = Object.keys(payrollDirty || {}).some(
-      k => k.startsWith(prefix)
-    );
+    const hasDone = Object.keys(payrollStatus || {})
+      .some(k => k.startsWith(prefix) && payrollStatus[k]?.done === true);
 
-    if(dirty){
+    if(hasDirty){
       dot.classList.add("bad");
       dot.title = "שונה לאחר דיווח לשכר";
-    }else if(done){
+    }else if(hasDone){
       dot.classList.add("done");
       dot.title = "דווח לשכר";
     }else{
@@ -825,6 +824,7 @@ function loadDateToUI(date){
     tr.querySelector(".reason").value = d?.reason || "";
     tr.classList.toggle("row-saved", !!d);
   });
+  lastSaved[date] = JSON.parse(JSON.stringify(drafts[date] || {}));
   refreshPayrollDots();
 }
 
@@ -869,13 +869,26 @@ function saveAll(){
   const entries = [];
 
   const byName = drafts[currentDate] || {};
-  for (const d of Object.values(byName)) {
-    if (d.shift && (d.action || d.reason)) {
+  const prev   = lastSaved[currentDate] || {};
+
+  for (const [name, d] of Object.entries(byName)) {
+    const p = prev[name];
+
+    // ✅ שינוי אמיתי נמדד רק לפי השדות שבאמת משפיעים (shift/action/reason)
+    const changed =
+      !p ||
+      (p.shift  || "") !== (d.shift  || "") ||
+      (p.action || "") !== (d.action || "") ||
+      (p.reason || "") !== (d.reason || "");
+
+    if (!changed) continue;
+
+    if (d.shift?.trim() && (d.action || d.reason)) {
       entries.push({
         date: d.date,
         name: d.name,
-        shift: d.shift,
-        action: d.action,
+        shift: d.shift,          // ✅ רק זה קובע
+        action: d.action || "",
         note: d.reason || ""
       });
     }
@@ -896,6 +909,7 @@ function saveAll(){
     setStatus("נשמר", "ok");
     showToast("נשמר", "כל הנתונים נשמרו");
     currentDate = workDate.value;
+    lastSaved[currentDate] = JSON.parse(JSON.stringify(drafts[currentDate] || {}));
 
     Promise.all([
       fetch("/payroll-status").then(r=>r.json()),
