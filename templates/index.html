@@ -404,6 +404,33 @@ html {
 .payroll-dot.bad{
   background:#ef4444; /* אדום = שונה אחרי שכר */
 }
+.file-btn{
+  position: relative;
+  overflow: hidden;
+}
+
+.file-btn input[type="file"]{
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.export-actions{
+  gap:12px;
+}
+
+.btn.secondary{
+  background:rgba(255,255,255,.08);
+  border:1px solid var(--border);
+  color:var(--text);
+}
+
+.divider{
+  width:1px;
+  height:28px;
+  background:var(--border);
+  margin-inline:6px;
+}
 </style>
 </head>
 
@@ -441,21 +468,20 @@ html {
       <button class="navbtn" id="themeBtn" onclick="toggleTheme()">🌙</button>
         <button class="navbtn" onclick="goUsers()">👥 משתמשים</button>
         <button class="navbtn" onclick="goAudit()">📜 Audit</button>
+        <div class="navbtn file-btn">
+          📥 העלאת אקסל שכר
+          <input
+          type="file"
+          accept=".xlsx"
+          onchange="uploadPayrollExcel(this.files[0])"
+          />
+        </div>
+        <button class="navbtn" onclick="logout()">🚪 התנתקות</button>
         {% if user == config.super_admin %}
           <button class="navbtn danger" onclick="resetSystem()">♻ איפוס</button>
         {% endif %}
-          <label class="btn" style="cursor:pointer">
-            📥 העלאת אקסל שכר
-            <input
-              type="file"
-              accept=".xlsx"
-              hidden
-              onchange="uploadPayrollExcel(this.files[0])"
-            />
-          </label>
       {% endif %}
 
-      <button class="navbtn" onclick="logout()">🚪 התנתקות</button>
     </div>
   </div>
 
@@ -483,10 +509,13 @@ html {
           </div>
         </div>
 
-        <div class="actions">
+        <div class="actions export-actions">
           <button class="btn ok" onclick="saveAll()">💾 שמור הכל</button>
-          <button class="btn" onclick="exportExcel()">📤 ייצוא לאקסל</button>
-          <div class="status" id="statusText">
+          <button class="btn secondary" onclick="exportExcel()">📤 ייצוא לאקסל</button>
+
+          <div class="divider"></div>
+
+          <div class="status">
             <span class="dot" id="statusDot"></span>
             <span id="statusMsg">מוכן</span>
           </div>
