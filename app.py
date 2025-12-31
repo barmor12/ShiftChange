@@ -582,7 +582,8 @@ def touch():
     for e in entries:
         date = e.get("date")
         name = e.get("name")
-        key = f"{date}|{name}"
+        shift = e.get("shift") or ""
+        key = f"{date}|{name}|{shift}"
 
         # 🔥 דריסה מלאה – אין היסטוריה
         touch_log[key] = {
@@ -725,23 +726,39 @@ def is_marked_as_done(cell) -> bool:
     # אם הצבע שונה מהצהוב שהמערכת ייצרה → נחשב "טופל"
     return rgb != EXPORT_YELLOW
 
-def is_payroll_orange(cell) -> bool:
-    fill = getattr(cell, "fill", None)
+
+
+# 🎯 צבעים שמותרים כ"כתום שכר" בלבד
+PAYROLL_ORANGE_RGB = {
+    "FFFFC000",  # Excel Orange
+    "FFFFA500",  # Orange
+    "FFED7D31",  # Custom orange
+}
+
+def is_payroll_done_cell(cell) -> bool:
+    fill = cell.fill
     if not fill or fill.patternType != "solid":
         return False
 
-    sc = fill.start_color
-    if not sc or sc.type != "rgb" or not sc.rgb:
+    # חייב להיות ערך בתא
+    if not cell.value or not str(cell.value).strip():
         return False
 
-    rgb = sc.rgb.upper()
+    fg = fill.fgColor
+    if not fg:
+        return False
 
-    # ✅ רק כתום בלבד
-    return rgb in {
-        "FFFFC000",  # כתום Excel נפוץ
-        "FFFFA500",  # Orange
-        "00FFC000",  # לפעמים בלי FF
-    }
+    # 🟨 אם זה בדיוק הצהוב של המערכת → זה לא שכר
+    if fg.type == "rgb" and fg.rgb:
+        rgb = fg.rgb.upper()
+        if len(rgb) == 8 and rgb.startswith("00"):
+            rgb = "FF" + rgb[2:]
+
+        if rgb == "FFFFF2CC":  # הצהוב שלך
+            return False
+
+    # ✅ כל צבע אחר (כולל THEME) נחשב שכר
+    return True
 
 def _to_date_iso(v):
     # header date cell יכול להיות date/datetime/str
@@ -824,23 +841,18 @@ def save_touch_log(data):
 
 def cell_fill_debug(cell) -> dict:
     """
-    מחזיר פירוט 'בטוח' על fill כדי להבין למה לא נתפס.
+    דיבאג בטוח ל־fill — בלי indexed / theme שגורמים לשגיאות
     """
     try:
         f = cell.fill
-        sc = f.start_color if f else None
+        if not f:
+            return {"fill": None}
+
+        fg = f.fgColor
         return {
-            "patternType": getattr(f, "patternType", None),
-            "fgType": getattr(getattr(f, "fgColor", None), "type", None),
-            "fgRgb": getattr(getattr(f, "fgColor", None), "rgb", None),
-            "fgIdx": getattr(getattr(f, "fgColor", None), "indexed", None),
-            "fgTheme": getattr(getattr(f, "fgColor", None), "theme", None),
-            "fgTint": getattr(getattr(f, "fgColor", None), "tint", None),
-            "scType": getattr(sc, "type", None),
-            "scRgb": getattr(sc, "rgb", None),
-            "scIdx": getattr(sc, "indexed", None),
-            "scTheme": getattr(sc, "theme", None),
-            "scTint": getattr(sc, "tint", None),
+            "patternType": f.patternType,
+            "fgType": fg.type if fg else None,
+            "fgRgb": fg.rgb if fg and fg.type == "rgb" else None,
         }
     except Exception as ex:
         return {"error": str(ex)}
@@ -895,11 +907,19 @@ def upload_payroll():
             cell = ws.cell(r, col)
             scanned_cells += 1
 
-            if is_marked_as_done(cell):
-                marked_cells += 1
+            dbg = cell_fill_debug(cell)
 
-                # key לפי המשמרת הרגילה (בוקר/ערב/לילה)
-                key = f"{date_iso}|{name}"
+            print(
+                f"[PAYROLL SCAN] r={r} c={col} name={name} "
+                f"date={date_iso} shift={shift} fill={dbg}"
+            )
+
+            if is_payroll_done_cell(cell):
+                key = f"{date_iso}|{name}|{shift}"
+
+                # ⛔ אם כבר טופל – לא נוגעים
+                if payroll.get(key, {}).get("done"):
+                    continue
 
                 payroll[key] = {
                     "done": True,

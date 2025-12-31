@@ -621,7 +621,6 @@ function refreshDirtyWarning(){
   const num = document.getElementById("dirtyCount");
   if(!box || !num) return;
 
-  // סט של שמות עובדים עם שינוי בתאריך הנבחר
   const names = new Set();
 
   Object.keys(payrollDirty).forEach(key=>{
@@ -653,7 +652,8 @@ function showDirtyOnly(){
       }
 
       const name = tr.dataset.name;
-      const key = `${currentDate}|${name}`;
+      const shift = tr.querySelector(".shift")?.value || "";
+      const key = `${currentDate}|${name}|${shift}`;
       const isDirty = !!payrollDirty[key];
 
       tr.style.display = isDirty ? "" : "none";
@@ -683,23 +683,28 @@ function refreshPayrollDots(){
     const dot = tr.querySelector(".payroll-dot");
     if(!dot) return;
 
-    // 🔥 ניקוי מוחלט – קריטי
-  dot.classList.remove("done", "bad");
+    dot.classList.remove("done", "bad");
 
-  const key = `${currentDate}|${name}`;
+    const shift = tr.querySelector(".shift")?.value || "";
+    if(!shift){
+      dot.title = "אין משמרת";
+      return;
+    }
 
-  const done  = !!payrollStatus?.[key]?.done;
-  const dirty = !!payrollDirty?.[key];
+    const key = `${currentDate}|${name}|${shift}`;
 
-  if(dirty){
-    dot.classList.add("bad");
-    dot.title = "שונה לאחר דיווח לשכר";
-  }else if(done){
-    dot.classList.add("done");
-    dot.title = "דווח לשכר";
-  }else{
-    dot.title = "טרם דווח לשכר";
-  }
+    const done  = payrollStatus?.[key]?.done === true;
+    const dirty = payrollDirty?.[key] !== undefined;
+
+    if(dirty){
+      dot.classList.add("bad");
+      dot.title = "שונה לאחר דיווח לשכר";
+    }else if(done){
+      dot.classList.add("done");
+      dot.title = "דווח לשכר";
+    }else{
+      dot.title = "טרם דווח לשכר";
+    }
   });
 }
 
@@ -787,16 +792,8 @@ function saveDraftForRow(tr){
   tr.classList.add("row-saved");
   setStatus("טיוטה נשמרה", "ok");
 
-// 🔄 שינוי מקומי → בודקים עם השרת
-if (payrollStatus?.[`${currentDate}|${tr.dataset.name}`]?.done) {
-  fetch("/payroll-dirty")
-    .then(r => r.json())
-    .then(dirty => {
-      payrollDirty = dirty || {};
-      refreshPayrollDots();
-      refreshDirtyWarning();
-    });
-}
+
+
 }
 
 /* ================== EVENTS ================== */
@@ -907,7 +904,6 @@ function saveAll(){
     ]).then(([status, dirty])=>{
       payrollStatus = status || {};
       payrollDirty  = dirty  || {};
-
       refreshPayrollDots();
       refreshDirtyWarning();
     });
