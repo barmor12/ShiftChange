@@ -187,6 +187,24 @@ tbody td{
 tbody tr:hover td{background: rgba(255,255,255,.06);}
 
 .actions{display:flex; gap:8px; flex-wrap:wrap;}
+
+.hidden { display:none; }
+.edit-overlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.hidden{
+  display: none !important;
+}
+.hidden{
+  display:none !important;
+}
 </style>
 </head>
 
@@ -265,7 +283,36 @@ tbody tr:hover td{background: rgba(255,255,255,.06);}
 
   </div>
 </div>
+<<!-- EDIT USER MODAL -->
+<div id="editModal" class="hidden edit-overlay">
 
+  <div class="card" style="width:320px;">
+    <div class="card-head">
+      <h2>✏️ עריכת משתמש</h2>
+    </div>
+
+    <div class="card-body field">
+      <label>שם משתמש</label>
+      <input id="editUser" class="input" disabled />
+
+      <label>סיסמה חדשה (אופציונלי)</label>
+      <input id="editPass" class="input" type="password"
+             placeholder="השאר ריק אם לא משנה" />
+
+      <label>תפקיד</label>
+      <select id="editRole">
+        <option value="user">user</option>
+        <option value="admin">admin</option>
+      </select>
+
+      <div style="display:flex; gap:8px; margin-top:12px;">
+        <button class="btn ok" onclick="saveEdit()">שמור</button>
+        <button class="btn gray" onclick="closeEdit()">ביטול</button>
+      </div>
+    </div>
+  </div>
+
+</div>
 <script>
 const THEME_KEY = "ui_theme";
 
@@ -352,7 +399,7 @@ function toggleTheme(){
   const saved = localStorage.getItem(THEME_KEY) || "dark";
   applyTheme(saved);
 })();
-</script>
 
+</script>
 </body>
 </html>
