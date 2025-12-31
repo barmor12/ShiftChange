@@ -22,6 +22,7 @@ CONFIG_FILE = os.path.join(APP_DIR, "config.json")
 STATE_FILE = os.path.join(APP_DIR, "state.json")
 LOG_FILE = os.path.join(APP_DIR, "audit.log")
 BOOT_FILE = os.path.join(APP_DIR, "boot.json")
+TOUCH_LOG_PATH = os.path.join(APP_DIR, "data", "touch_log.json")
 
 def load_config():
     with open(CONFIG_FILE, encoding="utf-8") as f:
@@ -566,9 +567,9 @@ def touch():
     entries = data.get("entries", [])
 
     user = session.get("user")
-    now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    # update state
+    # עדכון state
     state = {
         "last_modified_by": user,
         "last_modified_at": now
@@ -576,18 +577,30 @@ def touch():
     with open(STATE_FILE, "w", encoding="utf-8") as f:
         json.dump(state, f, ensure_ascii=False, indent=2)
 
-    # ✅ AUDIT – רק כאן
+    touch_log = load_touch_log()
+
     for e in entries:
+        date = e.get("date")
+        name = e.get("name")
+        key = f"{date}|{name}"
+
+        # 🔥 דריסה מלאה – אין היסטוריה
+        touch_log[key] = {
+            "touched_at": now,
+            "by": user
+        }
+
         log_action(
             "update entry",
             [
-                f"employee={e.get('name')}",
-                f"date={e.get('date')}",
+                f"employee={name}",
+                f"date={date}",
                 f"shift={e.get('shift')}",
                 f"value={e.get('action')} {e.get('note') or ''}"
             ]
         )
 
+    save_touch_log(touch_log)
     return jsonify(state)
 
 
@@ -798,6 +811,17 @@ def save_payroll_status(data):
     os.makedirs(os.path.dirname(PAYROLL_STATUS_PATH), exist_ok=True)
     with open(PAYROLL_STATUS_PATH, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
+def load_touch_log():
+    if not os.path.exists(TOUCH_LOG_PATH):
+        return {}
+    with open(TOUCH_LOG_PATH, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+def save_touch_log(data):
+    os.makedirs(os.path.dirname(TOUCH_LOG_PATH), exist_ok=True)
+    with open(TOUCH_LOG_PATH, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
 def cell_fill_debug(cell) -> dict:
     """
     מחזיר פירוט 'בטוח' על fill כדי להבין למה לא נתפס.
@@ -875,10 +899,14 @@ def upload_payroll():
                 marked_cells += 1
 
                 # key לפי המשמרת הרגילה (בוקר/ערב/לילה)
-                key = f"{date_iso}|{name}|{shift}"
-                if not payroll.get(key, {}).get("done"):
-                    payroll[key] = {"done": True, "updated_at": now, "by": by}
-                    updated += 1
+                key = f"{date_iso}|{name}"
+
+                payroll[key] = {
+                    "done": True,
+                    "updated_at": now,
+                    "by": by
+                }
+                updated += 1
 
                 # דיבאג: נדפיס כמה דוגמאות ראשונות כדי לוודא שאנחנו תופסים צבעים
                 if sample_printed < 8:
@@ -912,6 +940,30 @@ def upload_payroll():
 def payroll_status():
     data = load_payroll_status()
     return jsonify(data)
+
+
+@app.get("/payroll-dirty")
+@login_required
+def payroll_dirty():
+    payroll = load_payroll_status()
+    touch_log = load_touch_log()
+
+    dirty = {}
+
+    for key, p in payroll.items():
+        t = touch_log.get(key)
+        if not t:
+            continue
+
+        # 🔥 בדיקה נקייה: אותו key בלבד
+        if t["touched_at"] > p["updated_at"]:
+            dirty[key] = {
+                "payroll_at": p["updated_at"],
+                "touched_at": t["touched_at"],
+                "by": t["by"]
+            }
+
+    return jsonify(dirty)
 
 if __name__ == "__main__":
     app.run(debug=True)

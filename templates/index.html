@@ -400,6 +400,10 @@ html {
 .payroll-dot.done{
   background:#f59e0b; /* כתום = טופל בשכר */
 }
+
+.payroll-dot.bad{
+  background:#ef4444; /* אדום = שונה אחרי שכר */
+}
 </style>
 </head>
 
@@ -418,6 +422,14 @@ html {
 
       {% if state and state.last_modified_by %}
         <div class="last-update" id="lastUpdate">
+          <div
+            class="last-update"
+            id="payrollWarning"
+            style="display:none; cursor:pointer; background:var(--danger-bg); color:var(--danger-text)"
+            onclick="showDirtyOnly()"
+          >
+            ⚠ קיימים <strong id="dirtyCount">0</strong> עובדים ששונו לאחר דיווח לשכר
+          </div>
           עודכן לאחרונה ע"י <strong>{{ state.last_modified_by }}</strong>
           <span>({{ state.last_modified_at }})</span>
         </div>
@@ -497,12 +509,12 @@ html {
                 <thead>
                   <tr>
                     <th style="width:28%">עובד</th>
-                    <th style="width:12%">שכר</th> <!-- ✅ חדש -->
+                    <th style="width:12%">סטטוס</th> <!-- ✅ חדש -->
                     <th style="width:14%">משמרת מקור</th>
                     <th style="width:18%">משמרת</th>
                     <th style="width:22%">סוג השלמה</th>
                     
-                    <th>מלל חופשי</th>
+                    <th>חריגים</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -583,6 +595,7 @@ const LS_KEY = "hoursDrafts_v4";
 let drafts = {};
 let currentDate = null;
 let payrollStatus = {};
+let payrollDirty = {};
 
 /* ================== HELPERS ================== */
 function setStatus(msg, type="idle"){
@@ -601,32 +614,95 @@ function loadPayrollStatus(){
       refreshPayrollDots();
     });
 }
+function refreshDirtyWarning(){
+  if(!currentDate) return;
+
+  const box = document.getElementById("payrollWarning");
+  const num = document.getElementById("dirtyCount");
+  if(!box || !num) return;
+
+  // סט של שמות עובדים עם שינוי בתאריך הנבחר
+  const names = new Set();
+
+  Object.keys(payrollDirty).forEach(key=>{
+    const [date, name] = key.split("|");
+    if(date === currentDate){
+      names.add(name);
+    }
+  });
+
+  if(names.size > 0){
+    num.textContent = names.size;
+    box.style.display = "inline-flex";
+  }else{
+    box.style.display = "none";
+  }
+}
+let dirtyFilterActive = false;
+
+function showDirtyOnly(){
+  dirtyFilterActive = !dirtyFilterActive;
+
+  document.querySelectorAll(".team").forEach(team=>{
+    let teamHasDirty = false;
+
+    team.querySelectorAll("tr[data-name]").forEach(tr=>{
+      if(!dirtyFilterActive){
+        tr.style.display = "";
+        return;
+      }
+
+      const name = tr.dataset.name;
+      const key = `${currentDate}|${name}`;
+      const isDirty = !!payrollDirty[key];
+
+      tr.style.display = isDirty ? "" : "none";
+
+      if(isDirty){
+        teamHasDirty = true;
+      }
+    });
+
+    team.classList.toggle("open", dirtyFilterActive && teamHasDirty);
+  });
+}
+function loadPayrollDirty(){
+  fetch("/payroll-dirty")
+    .then(r=>r.json())
+    .then(data=>{
+      payrollDirty = data || {};
+      refreshDirtyWarning();
+      refreshPayrollDots();
+    });
+}
 function refreshPayrollDots(){
   if(!currentDate) return;
 
   document.querySelectorAll("tr[data-name]").forEach(tr=>{
     const name = tr.dataset.name;
-    const shift = tr.querySelector(".shift")?.value;
     const dot = tr.querySelector(".payroll-dot");
+    if(!dot) return;
 
-    if(!dot){
-      return;
-    }
+    // 🔥 ניקוי מוחלט – קריטי
+  dot.classList.remove("done", "bad");
 
-    if(!shift){
-      dot.classList.remove("done");
-      dot.title = "בחר משמרת";
-      return;
-    }
+  const key = `${currentDate}|${name}`;
 
-const done = Object.keys(payrollStatus).some(k =>
-  k.endsWith(`|${name}|${shift}`) && payrollStatus[k]?.done
-);
+  const done  = !!payrollStatus?.[key]?.done;
+  const dirty = !!payrollDirty?.[key];
 
-    dot.classList.toggle("done", !!done);
-    dot.title = done ? "דווח לשכר" : "טרם דווח לשכר";
+  if(dirty){
+    dot.classList.add("bad");
+    dot.title = "שונה לאחר דיווח לשכר";
+  }else if(done){
+    dot.classList.add("done");
+    dot.title = "דווח לשכר";
+  }else{
+    dot.title = "טרם דווח לשכר";
+  }
   });
 }
+
 
 function showToast(title, text){
   if(!toastEl) return;
@@ -669,8 +745,17 @@ function uploadPayrollExcel(file){
     return r.json();
   })
   .then(() => {
-    loadPayrollStatus(); // 🔥 זה העיקר
-    console.log("PAYROLL STATUS LOADED", payrollStatus);
+    return Promise.all([
+      fetch("/payroll-status").then(r=>r.json()),
+      fetch("/payroll-dirty").then(r=>r.json())
+    ]);
+  })
+  .then(([status, dirty])=>{
+    payrollStatus = status || {};
+    payrollDirty  = dirty  || {};
+
+    refreshPayrollDots();
+    refreshDirtyWarning();
     showToast("הצלחה", "אקסל השכר נטען");
   })
   .catch(()=>{
@@ -692,17 +777,26 @@ function saveDraftForRow(tr){
   drafts[date][tr.dataset.name] = {
     date,
     name: tr.dataset.name,
-    originShift: tr.querySelector(".originShift").value, // ✅ חדש
+    originShift: tr.querySelector(".originShift").value,
     shift: tr.querySelector(".shift").value,
     action: tr.querySelector(".action").value,
     reason: tr.querySelector(".reason").value
-    
   };
 
-  saveLocalImmediate(); // ✅ שמירה אמיתית
+  saveLocalImmediate();
   tr.classList.add("row-saved");
   setStatus("טיוטה נשמרה", "ok");
-  refreshPayrollDots();
+
+// 🔄 שינוי מקומי → בודקים עם השרת
+if (payrollStatus?.[`${currentDate}|${tr.dataset.name}`]?.done) {
+  fetch("/payroll-dirty")
+    .then(r => r.json())
+    .then(dirty => {
+      payrollDirty = dirty || {};
+      refreshPayrollDots();
+      refreshDirtyWarning();
+    });
+}
 }
 
 /* ================== EVENTS ================== */
@@ -739,8 +833,23 @@ function loadDateToUI(date){
 }
 
 workDate.addEventListener("change", ()=>{
+  dirtyFilterActive = false;
   currentDate = workDate.value;
+
+  // 🔥 חשוב: ביטול סינון וחשיפה של הכל
+  document.querySelectorAll("tr[data-name]").forEach(tr=>{
+    tr.style.display = "";
+  });
+
   loadDateToUI(currentDate);
+
+  fetch("/payroll-dirty")
+    .then(r => r.json())
+    .then(dirty => {
+      payrollDirty = dirty || {};
+      refreshPayrollDots();
+      refreshDirtyWarning();
+    });
 });
 
 /* ================== SEARCH ================== */
@@ -763,17 +872,16 @@ function saveAll(){
 
   const entries = [];
 
-  for(const byName of Object.values(drafts)){
-    for(const d of Object.values(byName)){
-      if(d.shift && (d.action || d.reason)){
-        entries.push({
-          date: d.date,
-          name: d.name,
-          shift: d.shift,
-          action: d.action,
-          note: d.reason || ""
-        });
-      }
+  const byName = drafts[currentDate] || {};
+  for (const d of Object.values(byName)) {
+    if (d.shift && (d.action || d.reason)) {
+      entries.push({
+        date: d.date,
+        name: d.name,
+        shift: d.shift,
+        action: d.action,
+        note: d.reason || ""
+      });
     }
   }
 
@@ -791,6 +899,18 @@ function saveAll(){
   .then(state => {
     setStatus("נשמר", "ok");
     showToast("נשמר", "כל הנתונים נשמרו");
+    currentDate = workDate.value;
+
+    Promise.all([
+      fetch("/payroll-status").then(r=>r.json()),
+      fetch("/payroll-dirty").then(r=>r.json())
+    ]).then(([status, dirty])=>{
+      payrollStatus = status || {};
+      payrollDirty  = dirty  || {};
+
+      refreshPayrollDots();
+      refreshDirtyWarning();
+    });
 
     const el = document.getElementById("lastUpdate");
     if(el){
@@ -805,7 +925,6 @@ function saveAll(){
     showToast("שגיאה", "העדכון נכשל");
   });
 }
-
 /* ================== EXPORT ================== */
 function exportExcel(){
   if(!reportFrom.value || !reportTo.value){
@@ -878,7 +997,16 @@ workDate.value ||= today;
 currentDate = workDate.value;
 loadDateToUI(currentDate);
 setStatus("מוכן","ok");
-loadPayrollStatus();
+Promise.all([
+  fetch("/payroll-status").then(r=>r.json()),
+  fetch("/payroll-dirty").then(r=>r.json())
+]).then(([status, dirty])=>{
+  payrollStatus = status || {};
+  payrollDirty  = dirty  || {};
+
+  refreshPayrollDots();
+  refreshDirtyWarning();
+});
 /* ================== THEME ================== */
 const THEME_KEY = "ui_theme";
 
