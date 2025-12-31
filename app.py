@@ -559,18 +559,24 @@ def users_delete():
 @app.post("/reset")
 @login_required
 def reset():
-    # 🔐 רק מנהל המערכת הראשי
+    # 🔐 רק מנהל על
     if session.get("user") != CONFIG.get("super_admin"):
         abort(403)
 
-    if os.path.exists(STATE_FILE):
-        os.remove(STATE_FILE)
+    paths = [
+        STATE_FILE,
+        LOG_FILE,
+        PAYROLL_STATUS_PATH,
+        TOUCH_LOG_PATH,        # ✅ איפוס שינויים
+        PAYROLL_META_PATH      # ✅ איפוס זמן שכר
+    ]
 
-    if os.path.exists(LOG_FILE):
-        os.remove(LOG_FILE)
-
-    if os.path.exists(PAYROLL_STATUS_PATH):
-        os.remove(PAYROLL_STATUS_PATH)
+    for p in paths:
+        try:
+            if os.path.exists(p):
+                os.remove(p)
+        except Exception:
+            pass
 
     update_state("reset system")
     return jsonify({"ok": True})
@@ -613,10 +619,18 @@ def touch():
             continue
 
         # ✅ שינוי אמיתי
+
+        date_prefix = f"{date}|{name}|"
+        had_payroll = any(
+            k.startswith(date_prefix)
+            for k in payroll_status.keys()
+        )
+
         touch_log[key] = {
             "touched_at": now,
             "by": user,
-            "value": new_value
+            "value": new_value,
+            "after_payroll": had_payroll   # ⭐️ זה השדה הקריטי
         }
 
         log_action(
